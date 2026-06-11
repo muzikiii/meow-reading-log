@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEOW Reading Log</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap');
+
+:root {
+  --bg:       #f5f0e8;
+  --surface:  #ede7da;
+  --surface2: #e4ddd0;
+  --surface3: #d8cfc0;
+  --border:   rgba(120,90,50,0.12);
+  --border2:  rgba(120,90,50,0.22);
+  --text:     #2e2318;
+  --text2:    #7a6248;
+  --text3:    #a8907a;
+  --accent:   #7a5c38;
+  --accent2:  rgba(122,92,56,0.1);
+  --green:    #5c7a4e;
+  --green2:   rgba(92,122,78,0.12);
+  --brick:    #b85c3a;
+  --brick2:   rgba(184,92,58,0.1);
+  --done:     #5c7a4e;
+  --reading:  #7a5c38;
+  --notstart: #a8907a;
+  --tag-bg:   rgba(122,92,56,0.08);
+  --tag-text: #7a5c38;
+  --tag-border: rgba(122,92,56,0.2);
+  --cat-bg:   rgba(92,122,78,0.08);
+  --cat-text: #4a6640;
+  --cat-border: rgba(92,122,78,0.2);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Sarabun', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ── Sidebar ── */
+.shell { display:flex; min-height:100vh; }
+
+.sidebar {
+  width:220px; flex-shrink:0;
+  background: var(--surface);
+  border-right: 1px solid var(--border2);
+  padding: 28px 0;
+  position: sticky; top:0; height:100vh;
+  overflow-y:auto;
+  display:flex; flex-direction:column;
+}
+
+.logo { padding:0 24px 28px; border-bottom:1px solid var(--border2); margin-bottom:20px; }
+
+.logo-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 17px; color: var(--accent);
+  letter-spacing: 0.03em;
+}
+.logo-meow { color: var(--brick); font-style:italic; }
+.logo-sub { font-size:10px; color:var(--text3); letter-spacing:0.1em; text-transform:uppercase; margin-top:3px; }
+
+.nav-section { padding:0 12px; margin-bottom:6px; }
+.nav-label { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text3); padding:0 8px; margin-bottom:4px; }
+
+.nav-item {
+  display:flex; align-items:center; gap:9px;
+  padding:9px 10px; border-radius:8px;
+  cursor:pointer; color:var(--text2); font-size:13px;
+  transition:all 0.15s; border:none; background:none;
+  width:100%; text-align:left; font-family:'Sarabun',sans-serif;
+}
+.nav-item:hover { background:var(--surface2); color:var(--text); }
+.nav-item.active { background:var(--accent2); color:var(--accent); font-weight:500; }
+
+.nav-icon { font-size:14px; opacity:0.65; }
+.nav-item.active .nav-icon { opacity:1; }
+
+.nav-count {
+  margin-left:auto; font-size:11px; color:var(--text3);
+  background:var(--surface2); padding:1px 7px; border-radius:20px;
+}
+.nav-item.active .nav-count { background:rgba(122,92,56,0.15); color:var(--accent); }
+
+.sidebar-footer { margin-top:auto; padding:16px 20px 0; border-top:1px solid var(--border); }
+.sync-btn {
+  width:100%; padding:8px;
+  background:none; border:1px solid var(--border2);
+  border-radius:8px; color:var(--text2); font-size:12px;
+  font-family:'Sarabun',sans-serif; cursor:pointer; transition:all 0.15s;
+}
+.sync-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+/* ── Main ── */
+.main { flex:1; overflow-x:hidden; }
+.view { display:none; padding:36px 44px; max-width:1100px; }
+.view.active { display:block; }
+
+.page-header { margin-bottom:32px; }
+.page-title { font-family:'Playfair Display',serif; font-size:26px; font-weight:400; color:var(--text); margin-bottom:3px; }
+.page-sub { font-size:12px; color:var(--text3); }
+
+/* ── Stats ── */
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:32px; }
+
+.stat-card {
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:12px; padding:18px 20px;
+}
+.stat-card.accent-green { border-left:3px solid var(--green); }
+.stat-card.accent-brick { border-left:3px solid var(--brick); }
+.stat-card.accent-brown { border-left:3px solid var(--accent); }
+
+.stat-num { font-family:'Playfair Display',serif; font-size:34px; color:var(--accent); line-height:1; margin-bottom:3px; }
+.stat-card.accent-green .stat-num { color:var(--green); }
+.stat-card.accent-brick .stat-num { color:var(--brick); }
+.stat-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.08em; }
+
+/* ── Chart card ── */
+.section-title { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text3); margin-bottom:12px; }
+
+.chart-card {
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:12px; padding:22px;
+}
+.chart-card.full { margin-bottom:24px; }
+
+/* Category tabs */
+.cat-tabs { display:flex; gap:6px; margin-bottom:16px; }
+.cat-tab {
+  padding:4px 12px; border-radius:20px; border:1px solid var(--border2);
+  background:none; color:var(--text2); font-size:12px;
+  font-family:'Sarabun',sans-serif; cursor:pointer; transition:all 0.15s;
+}
+.cat-tab:hover { border-color:var(--accent); color:var(--accent); }
+.cat-tab.active { background:var(--accent2); border-color:var(--accent); color:var(--accent); }
+
+.bar-item { margin-bottom:10px; }
+.bar-meta { display:flex; justify-content:space-between; font-size:12px; color:var(--text2); margin-bottom:4px; }
+.bar-track { height:5px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+.bar-fill { height:100%; background:var(--accent); border-radius:3px; transition:width 0.5s ease; }
+.bar-fill.green { background:var(--green); }
+
+/* ── Monthly progress (yearly dots) ── */
+.month-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+.month-label { width:72px; font-size:12px; color:var(--text3); flex-shrink:0; }
+.month-covers { display:flex; flex-wrap:wrap; gap:5px; flex:1; }
+
+.cover-thumb {
+  width:28px; height:40px; border-radius:3px; overflow:hidden;
+  background:var(--surface2); border:1px solid var(--border2);
+  cursor:pointer; transition:transform 0.15s; flex-shrink:0;
+  position:relative;
+}
+.cover-thumb:hover { transform:scale(1.1); z-index:2; }
+.cover-thumb img { width:100%; height:100%; object-fit:cover; }
+.cover-thumb .no-img {
+  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  font-size:8px; color:var(--text3); text-align:center; padding:2px; line-height:1.2;
+}
+.month-count { font-size:11px; color:var(--text3); flex-shrink:0; min-width:36px; text-align:right; }
+
+/* ── Current month section ── */
+.current-month-section { margin-top:28px; }
+.current-month-title { font-family:'Playfair Display',serif; font-size:16px; color:var(--text); margin-bottom:14px; }
+.current-month-covers { display:flex; flex-wrap:wrap; gap:14px; }
+
+.current-cover {
+  width:80px; cursor:pointer;
+}
+.current-cover-img {
+  width:80px; height:114px; border-radius:5px;
+  background:var(--surface2); border:1px solid var(--border2);
+  overflow:hidden; margin-bottom:6px;
+  transition:box-shadow 0.15s;
+}
+.current-cover-img:hover { box-shadow:0 4px 12px rgba(120,90,50,0.2); }
+.current-cover-img img { width:100%; height:100%; object-fit:cover; }
+.current-cover-img .no-img-lg {
+  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  font-size:10px; color:var(--text3); text-align:center; padding:6px; line-height:1.4;
+}
+.current-cover-title { font-size:11px; color:var(--text2); line-height:1.3;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+/* ── All Books ── */
+.filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
+.search-box {
+  flex:1; min-width:180px;
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:8px; padding:8px 14px;
+  color:var(--text); font-family:'Sarabun',sans-serif; font-size:13px;
+  outline:none; transition:border-color 0.15s;
+}
+.search-box:focus { border-color:var(--accent); }
+.search-box::placeholder { color:var(--text3); }
+
+.filter-chip {
+  padding:5px 14px; border-radius:20px; border:1px solid var(--border2);
+  background:none; color:var(--text2); font-size:12px;
+  font-family:'Sarabun',sans-serif; cursor:pointer; transition:all 0.15s; white-space:nowrap;
+}
+.filter-chip:hover { border-color:var(--accent); color:var(--accent); }
+.filter-chip.active { background:var(--accent2); border-color:var(--accent); color:var(--accent); }
+
+#tag-filter-row { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:18px; }
+
+/* Book grid */
+.book-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:16px; }
+
+.book-card {
+  cursor:pointer; transition:transform 0.15s;
+}
+.book-card:hover { transform:translateY(-2px); }
+
+.book-card-cover {
+  width:100%; aspect-ratio:2/3;
+  border-radius:6px; background:var(--surface2);
+  border:1px solid var(--border2); overflow:hidden;
+  margin-bottom:8px; position:relative;
+}
+.book-card-cover img { width:100%; height:100%; object-fit:cover; }
+.book-card-cover .no-img-card {
+  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  padding:10px; text-align:center; font-size:11px; color:var(--text3); line-height:1.4;
+}
+.book-card-status {
+  position:absolute; bottom:4px; right:4px;
+  padding:2px 6px; border-radius:3px; font-size:9px;
+}
+.book-card-status.done { background:rgba(92,122,78,0.85); color:#fff; }
+.book-card-status.reading { background:rgba(122,92,56,0.85); color:#fff; }
+.book-card-status.notstart { background:rgba(168,144,122,0.85); color:#fff; }
+
+.book-card-title { font-size:12px; color:var(--text); line-height:1.3; font-weight:400;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.book-card-pub { font-size:11px; color:var(--text3); margin-top:2px; }
+
+/* Book detail modal */
+.modal-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(46,35,24,0.5); z-index:200;
+  align-items:center; justify-content:center;
+  padding:20px;
+}
+.modal-overlay.open { display:flex; }
+.modal-box {
+  background:var(--bg); border:1px solid var(--border2);
+  border-radius:16px; width:520px; max-width:100%;
+  max-height:85vh; overflow-y:auto; padding:28px;
+}
+.modal-cover {
+  width:90px; height:130px; border-radius:6px;
+  background:var(--surface2); border:1px solid var(--border2);
+  overflow:hidden; flex-shrink:0;
+}
+.modal-cover img { width:100%; height:100%; object-fit:cover; }
+.modal-cover .no-img-modal {
+  width:100%; height:100%; display:flex; align-items:center;
+  justify-content:center; font-size:11px; color:var(--text3); padding:8px; text-align:center;
+}
+.modal-header { display:flex; gap:18px; margin-bottom:20px; }
+.modal-info { flex:1; }
+.modal-title { font-family:'Playfair Display',serif; font-size:18px; color:var(--text); line-height:1.3; margin-bottom:4px; }
+.modal-author { font-size:13px; color:var(--text2); }
+
+.modal-props { border-top:1px solid var(--border); padding-top:16px; }
+.prop-row { display:flex; gap:12px; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.prop-key { width:120px; flex-shrink:0; color:var(--text3); }
+.prop-val { color:var(--text2); flex:1; }
+
+.modal-actions { display:flex; gap:10px; margin-top:20px; }
+.btn-notion {
+  padding:9px 20px; background:var(--accent); border:none;
+  border-radius:8px; color:#fff; font-family:'Sarabun',sans-serif;
+  font-size:13px; cursor:pointer; transition:opacity 0.15s;
+}
+.btn-notion:hover { opacity:0.85; }
+.btn-close {
+  padding:9px 20px; background:none; border:1px solid var(--border2);
+  border-radius:8px; color:var(--text2); font-family:'Sarabun',sans-serif;
+  font-size:13px; cursor:pointer; transition:all 0.15s;
+}
+.btn-close:hover { border-color:var(--text2); color:var(--text); }
+
+/* ── Wrapup ── */
+.wrapup-year-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:28px; }
+
+.wrapup-month-section { margin-bottom:36px; }
+.wrapup-month-heading {
+  font-family:'Playfair Display',serif; font-size:17px; color:var(--text);
+  margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border2);
+  display:flex; justify-content:space-between; align-items:baseline;
+}
+.wrapup-month-count { font-size:12px; color:var(--text3); font-family:'Sarabun',sans-serif; }
+.wrapup-covers { display:flex; flex-wrap:wrap; gap:12px; }
+
+.wrapup-cover {
+  width:72px; cursor:pointer;
+}
+.wrapup-cover-img {
+  width:72px; height:102px; border-radius:5px;
+  background:var(--surface2); border:1px solid var(--border2);
+  overflow:hidden; margin-bottom:5px; transition:box-shadow 0.15s;
+}
+.wrapup-cover-img:hover { box-shadow:0 3px 10px rgba(120,90,50,0.2); }
+.wrapup-cover-img img { width:100%; height:100%; object-fit:cover; }
+.wrapup-cover-img .no-img-wu {
+  width:100%; height:100%; display:flex; align-items:center;
+  justify-content:center; font-size:9px; color:var(--text3); padding:4px; text-align:center; line-height:1.3;
+}
+.wrapup-cover-title { font-size:10px; color:var(--text2); line-height:1.3;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+/* ── Tag browser ── */
+.tag-section { margin-bottom:36px; }
+.tag-section-heading {
+  font-family:'Playfair Display',serif; font-size:17px; color:var(--text);
+  margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border2);
+  display:flex; justify-content:space-between; align-items:baseline;
+}
+.tag-section-count { font-size:12px; color:var(--text3); font-family:'Sarabun',sans-serif; }
+.tag-covers { display:flex; flex-wrap:wrap; gap:12px; }
+
+.tag-cover { width:72px; cursor:pointer; }
+.tag-cover-img {
+  width:72px; height:102px; border-radius:5px;
+  background:var(--surface2); border:1px solid var(--border2);
+  overflow:hidden; margin-bottom:5px; transition:box-shadow 0.15s;
+}
+.tag-cover-img:hover { box-shadow:0 3px 10px rgba(120,90,50,0.2); }
+.tag-cover-img img { width:100%; height:100%; object-fit:cover; }
+.tag-cover-img .no-img-tg {
+  width:100%; height:100%; display:flex; align-items:center;
+  justify-content:center; font-size:9px; color:var(--text3); padding:4px; text-align:center; line-height:1.3;
+}
+.tag-cover-title { font-size:10px; color:var(--text2); line-height:1.3;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
+/* ── Tags ── */
+.tag {
+  display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px;
+  background:var(--tag-bg); color:var(--tag-text); border:1px solid var(--tag-border); margin:1px;
+}
+.tag.cat {
+  background:var(--cat-bg); color:var(--cat-text); border-color:var(--cat-border);
+}
+
+.status-pill {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 10px; border-radius:20px; font-size:11px; white-space:nowrap;
+}
+.status-done { background:rgba(92,122,78,0.12); color:var(--done); }
+.status-reading { background:rgba(122,92,56,0.12); color:var(--reading); }
+.status-notstart { background:rgba(168,144,122,0.15); color:var(--notstart); }
+.status-dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+/* ── Loading / Error / Empty ── */
+.loading { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 0; color:var(--text3); font-size:13px; gap:12px; }
+.spinner { width:24px; height:24px; border:2px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.error-box { background:rgba(184,92,58,0.08); border:1px solid rgba(184,92,58,0.2); border-radius:10px; padding:18px 22px; font-size:13px; color:var(--brick); margin:32px 0; }
+.empty-state { padding:50px 0; text-align:center; color:var(--text3); font-size:13px; }
+
+/* ── Config modal ── */
+.config-overlay { display:none; position:fixed; inset:0; background:rgba(46,35,24,0.55); z-index:100; align-items:center; justify-content:center; }
+.config-overlay.open { display:flex; }
+.config-modal { background:var(--bg); border:1px solid var(--border2); border-radius:16px; padding:30px; width:460px; max-width:90vw; }
+.config-title { font-family:'Playfair Display',serif; font-size:20px; color:var(--text); margin-bottom:6px; }
+.config-sub { font-size:13px; color:var(--text3); margin-bottom:22px; }
+.config-field { margin-bottom:14px; }
+.config-label { display:block; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text3); margin-bottom:5px; }
+.config-input { width:100%; background:var(--surface); border:1px solid var(--border2); border-radius:8px; padding:9px 14px; color:var(--text); font-family:'Sarabun',sans-serif; font-size:13px; outline:none; transition:border-color 0.15s; }
+.config-input:focus { border-color:var(--accent); }
+.config-hint { font-size:11px; color:var(--text3); margin-top:3px; }
+.config-actions { display:flex; gap:10px; margin-top:22px; }
+.btn-primary { flex:1; padding:10px; background:var(--accent); border:none; border-radius:8px; color:#fff; font-family:'Sarabun',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:opacity 0.15s; }
+.btn-primary:hover { opacity:0.85; }
+.btn-ghost { padding:10px 18px; background:none; border:1px solid var(--border2); border-radius:8px; color:var(--text2); font-family:'Sarabun',sans-serif; font-size:13px; cursor:pointer; transition:all 0.15s; }
+.btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+
+/* ── Responsive ── */
+@media (max-width:900px) {
+  .sidebar { width:180px; }
+  .view { padding:22px; }
+  .stats-row { grid-template-columns:repeat(2,1fr); }
+}
+@media (max-width:640px) {
+  .shell { flex-direction:column; }
+  .sidebar { width:100%; height:auto; position:relative; padding:12px; flex-direction:row; flex-wrap:wrap; gap:4px; }
+  .logo, .sidebar-footer, .nav-label { display:none; }
+  .nav-section { padding:0; }
+  .view { padding:14px; }
+  .stats-row { grid-template-columns:repeat(2,1fr); }
+  .book-grid { grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); }
+}
+@media (prefers-reduced-motion:reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-title"><span class="logo-meow">MEOW</span> Reading Log</div>
+      <div class="logo-sub">personal library</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Views</div>
+      <button class="nav-item active" onclick="showView('dashboard',this)">
+        <span class="nav-icon">◈</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="showView('books',this)">
+        <span class="nav-icon">◫</span> All books
+        <span class="nav-count" id="nav-count-books">—</span>
+      </button>
+      <button class="nav-item" onclick="showView('wrapup',this)">
+        <span class="nav-icon">◷</span> Monthly wrap-up
+      </button>
+      <button class="nav-item" onclick="showView('tags',this)">
+        <span class="nav-icon">◉</span> Tag browser
+      </button>
+    </div>
+    <div class="sidebar-footer">
+      <button class="sync-btn" onclick="loadData()">↻ Sync Notion</button>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- Dashboard -->
+    <div class="view active" id="view-dashboard">
+      <div class="page-header">
+        <div class="page-title">Overview</div>
+        <div class="page-sub" id="dash-sub">—</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card accent-green">
+          <div class="stat-num" id="stat-total">—</div>
+          <div class="stat-label">Total done</div>
+        </div>
+        <div class="stat-card accent-brown">
+          <div class="stat-num" id="stat-year">—</div>
+          <div class="stat-label">This year</div>
+        </div>
+        <div class="stat-card accent-brown">
+          <div class="stat-num" id="stat-month">—</div>
+          <div class="stat-label">This month</div>
+        </div>
+        <div class="stat-card accent-brick">
+          <div class="stat-num" id="stat-notstart">—</div>
+          <div class="stat-label">Not started</div>
+        </div>
+      </div>
+
+      <!-- By Category -->
+      <div class="chart-card full">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="section-title" style="margin-bottom:0">By category</div>
+          <div class="cat-tabs">
+            <button class="cat-tab active" onclick="setCatScope('total',this)">Total</button>
+            <button class="cat-tab" onclick="setCatScope('year',this)">This year</button>
+            <button class="cat-tab" onclick="setCatScope('month',this)">This month</button>
+          </div>
+        </div>
+        <div id="chart-category"></div>
+      </div>
+
+      <!-- Monthly progress (yearly) -->
+      <div class="chart-card full">
+        <div class="section-title">Monthly progress — <span id="year-label"></span></div>
+        <div id="chart-monthly"></div>
+      </div>
+
+      <!-- This month covers -->
+      <div class="current-month-section">
+        <div class="current-month-title" id="current-month-title">เดือนนี้</div>
+        <div class="current-month-covers" id="current-month-covers"></div>
+      </div>
+    </div>
+
+    <!-- All Books -->
+    <div class="view" id="view-books">
+      <div class="page-header">
+        <div class="page-title">All books</div>
+        <div class="page-sub" id="books-sub">—</div>
+      </div>
+      <div class="filter-bar">
+        <input type="search" class="search-box" placeholder="Search title or publisher…" id="search-input" oninput="renderBooks()">
+        <button class="filter-chip active" data-filter="all" onclick="setStatusFilter('all',this)">All</button>
+        <button class="filter-chip" data-filter="Done" onclick="setStatusFilter('Done',this)">Done</button>
+        <button class="filter-chip" data-filter="Reading" onclick="setStatusFilter('Reading',this)">Reading</button>
+        <button class="filter-chip" data-filter="Not Started" onclick="setStatusFilter('Not Started',this)">Not started</button>
+      </div>
+      <div id="tag-filter-row"></div>
+      <div class="book-grid" id="book-grid"></div>
+      <div id="books-empty" class="empty-state" style="display:none">No books match this filter.</div>
+    </div>
+
+    <!-- Monthly wrap-up -->
+    <div class="view" id="view-wrapup">
+      <div class="page-header">
+        <div class="page-title">Monthly wrap-up</div>
+        <div class="page-sub">หนังสือที่อ่านจบในแต่ละเดือน</div>
+      </div>
+      <div class="wrapup-year-bar" id="wrapup-year-filter"></div>
+      <div id="wrapup-content"></div>
+    </div>
+
+    <!-- Tag browser -->
+    <div class="view" id="view-tags">
+      <div class="page-header">
+        <div class="page-title">Tag browser</div>
+        <div class="page-sub">จับกลุ่มหนังสือตาม tag เพื่อทำคอนเทนต์</div>
+      </div>
+      <div id="tag-sections"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Book detail modal -->
+<div class="modal-overlay" id="book-modal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-cover" id="modal-cover">
+        <div class="no-img-modal">No cover</div>
+      </div>
+      <div class="modal-info">
+        <div class="modal-title" id="modal-title"></div>
+        <div class="modal-author" id="modal-author"></div>
+        <div style="margin-top:10px" id="modal-status"></div>
+      </div>
+    </div>
+    <div class="modal-props" id="modal-props"></div>
+    <div class="modal-actions">
+      <button class="btn-notion" id="modal-notion-btn" onclick="openNotion()">Open in Notion</button>
+      <button class="btn-close" onclick="document.getElementById('book-modal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Config modal -->
+<div class="config-overlay open" id="config-overlay">
+  <div class="config-modal">
+    <div class="config-title"><span style="font-style:italic;color:var(--brick)">MEOW</span> Reading Log</div>
+    <div class="config-sub">ตั้งค่าครั้งแรกครั้งเดียว ข้อมูลเก็บใน browser นี้</div>
+    <div class="config-field">
+      <label class="config-label">Worker URL</label>
+      <input class="config-input" id="cfg-worker" placeholder="https://my-books.workers.dev" type="url">
+      <div class="config-hint">URL ของ Cloudflare Worker ที่จะ deploy</div>
+    </div>
+    <div class="config-field">
+      <label class="config-label">Notion Database ID</label>
+      <input class="config-input" id="cfg-dbid" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+      <div class="config-hint">เอามาจาก URL ของ Notion database</div>
+    </div>
+    <div class="config-actions">
+      <button class="btn-primary" onclick="saveConfig()">Save & connect</button>
+      <button class="btn-ghost" onclick="loadDemo()">Use demo data</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'reading_log_config';
+const DATA_KEY    = 'reading_log_data';
+
+let allBooks     = [];
+let statusFilter = 'all';
+let tagFilter    = null;
+let wrapupYear   = null;
+let catScope     = 'total';
+let currentBook  = null;
+
+/* ── Config ── */
+function saveConfig() {
+  const worker = document.getElementById('cfg-worker').value.trim();
+  const dbid   = document.getElementById('cfg-dbid').value.trim();
+  if (!worker || !dbid) { alert('กรุณากรอก Worker URL และ Database ID'); return; }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ worker, dbid }));
+  document.getElementById('config-overlay').classList.remove('open');
+  loadData();
+}
+function getConfig() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; }
+}
+
+/* ── Navigation ── */
+function showView(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+/* ── Load from Notion Worker ── */
+async function loadData() {
+  const cfg = getConfig();
+  if (!cfg) return;
+  try {
+    const res = await fetch(`${cfg.worker}/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ database_id: cfg.dbid })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const raw = await res.json();
+    allBooks = parseNotionData(raw.results || []);
+    localStorage.setItem(DATA_KEY, JSON.stringify(allBooks));
+    renderAll();
+  } catch (err) {
+    showError('view-dashboard', `ไม่สามารถเชื่อมต่อ Worker ได้: ${err.message}`);
+  }
+}
+
+function parseNotionData(results) {
+  return results.map(page => {
+    const p = page.properties;
+    return {
+      id:        page.id,
+      title:     p['Name']?.title?.[0]?.plain_text || p['Title']?.title?.[0]?.plain_text || 'Untitled',
+      author:    p['Author']?.rich_text?.[0]?.plain_text || '',
+      category:  (p['Category']?.multi_select || []).map(s => s.name),
+      tags:      (p['TAG']?.multi_select || []).map(s => s.name),
+      status:    p['Status']?.status?.name || p['Status']?.select?.name || '',
+      type:      p['Type']?.select?.name || '',
+      publisher: p['Publisher']?.select?.name || '',
+      started:   p['Started']?.date?.start || '',
+      completed: p['Completed']?.date?.start || '',
+      image:     p['Image']?.url || p['Image']?.rich_text?.[0]?.plain_text || '',
+      notionUrl: page.url || ''
+    };
+  });
+}
+
+function showError(viewId, msg) {
+  const view = document.getElementById(viewId);
+  let el = view.querySelector('.error-box');
+  if (!el) { el = document.createElement('div'); el.className = 'error-box'; view.appendChild(el); }
+  el.textContent = msg;
+}
+
+/* ── Render all ── */
+function renderAll() {
+  document.getElementById('nav-count-books').textContent = allBooks.length;
+  renderDashboard();
+  renderBooks();
+  renderWrapup();
+  renderTags();
+}
+
+/* ── Dashboard ── */
+function renderDashboard() {
+  const now = new Date();
+  const thisYear  = now.getFullYear().toString();
+  const thisMonth = `${thisYear}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  const done     = allBooks.filter(b => b.status === 'Done');
+  const notStart = allBooks.filter(b => b.status === 'Not Started' || b.status === 'Not started');
+
+  document.getElementById('stat-total').textContent    = done.length;
+  document.getElementById('stat-year').textContent     = done.filter(b => b.completed?.startsWith(thisYear)).length;
+  document.getElementById('stat-month').textContent    = done.filter(b => b.completed?.startsWith(thisMonth)).length;
+  document.getElementById('stat-notstart').textContent = notStart.length;
+  document.getElementById('dash-sub').textContent      = `อัปเดตล่าสุด: ${now.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'})}`;
+  document.getElementById('year-label').textContent    = thisYear;
+
+  renderCategoryChart();
+  renderMonthlyChart(done, parseInt(thisYear));
+  renderCurrentMonth(done, thisMonth);
+}
+
+function setCatScope(scope, btn) {
+  catScope = scope;
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderCategoryChart();
+}
+
+function renderCategoryChart() {
+  const now = new Date();
+  const thisYear  = now.getFullYear().toString();
+  const thisMonth = `${thisYear}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  let pool = allBooks.filter(b => b.status === 'Done');
+  if (catScope === 'year')  pool = pool.filter(b => b.completed?.startsWith(thisYear));
+  if (catScope === 'month') pool = pool.filter(b => b.completed?.startsWith(thisMonth));
+  renderBarChart('chart-category', countBy(pool, 'category'), 'green');
+}
+
+function countBy(books, field) {
+  const counts = {};
+  books.forEach(b => {
+    const vals = Array.isArray(b[field]) ? b[field] : [b[field]];
+    vals.forEach(v => { if (v) counts[v] = (counts[v]||0) + 1; });
+  });
+  return Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,10);
+}
+
+function renderBarChart(id, data, color) {
+  const el = document.getElementById(id);
+  if (!data.length) { el.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:6px 0">No data yet</div>'; return; }
+  const max = data[0][1];
+  el.innerHTML = data.map(([label,count]) => `
+    <div class="bar-item">
+      <div class="bar-meta"><span>${label}</span><span>${count}</span></div>
+      <div class="bar-track"><div class="bar-fill ${color||''}" style="width:${(count/max*100).toFixed(1)}%"></div></div>
+    </div>`).join('');
+}
+
+function renderMonthlyChart(done, year) {
+  const el = document.getElementById('chart-monthly');
+  const months = Array.from({length:12}, (_,i) => {
+    const m     = String(i+1).padStart(2,'0');
+    const key   = `${year}-${m}`;
+    const books = done.filter(b => b.completed?.startsWith(key));
+    const label = new Date(year,i,1).toLocaleDateString('th-TH',{month:'short'});
+    return { label, books };
+  });
+  el.innerHTML = months.map(m => `
+    <div class="month-row">
+      <span class="month-label">${m.label}</span>
+      <div class="month-covers">
+        ${m.books.map(b => coverThumb(b)).join('')}
+        ${m.books.length === 0 ? '<span style="font-size:11px;color:var(--text3)">—</span>' : ''}
+      </div>
+      <span class="month-count">${m.books.length > 0 ? m.books.length+' เล่ม' : ''}</span>
+    </div>`).join('');
+}
+
+function coverThumb(b) {
+  const img = b.image
+    ? `<img src="${escHtml(b.image)}" alt="${escHtml(b.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=no-img>${escHtml(b.title.slice(0,6))}</div>'">`
+    : `<div class="no-img">${escHtml(b.title.slice(0,6))}</div>`;
+  return `<div class="cover-thumb" title="${escHtml(b.title)}" onclick="openBook('${b.id}')">${img}</div>`;
+}
+
+function renderCurrentMonth(done, thisMonth) {
+  const books = done.filter(b => b.completed?.startsWith(thisMonth));
+  const monthLabel = new Date(thisMonth+'-01').toLocaleDateString('th-TH',{month:'long',year:'numeric'});
+  document.getElementById('current-month-title').textContent = monthLabel;
+  const el = document.getElementById('current-month-covers');
+  if (!books.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:13px">ยังไม่มีหนังสือที่อ่านจบเดือนนี้</div>';
+    return;
+  }
+  el.innerHTML = books.map(b => {
+    const img = b.image
+      ? `<img src="${escHtml(b.image)}" alt="${escHtml(b.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=no-img-lg>${escHtml(b.title.slice(0,12))}</div>'">`
+      : `<div class="no-img-lg">${escHtml(b.title.slice(0,20))}</div>`;
+    return `<div class="current-cover" onclick="openBook('${b.id}')">
+      <div class="current-cover-img">${img}</div>
+      <div class="current-cover-title">${escHtml(b.title)}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── All Books ── */
+function setStatusFilter(val, btn) {
+  statusFilter = val;
+  document.querySelectorAll('[data-filter]').forEach(el => el.classList.toggle('active', el.dataset.filter === val));
+  renderBooks();
+}
+
+function setTagFilter(val) {
+  tagFilter = tagFilter === val ? null : val;
+  renderBooks();
+}
+
+function renderBooks() {
+  const query = (document.getElementById('search-input')?.value||'').toLowerCase();
+  let filtered = allBooks;
+  if (statusFilter !== 'all') filtered = filtered.filter(b => b.status === statusFilter);
+  if (tagFilter) filtered = filtered.filter(b => b.tags.includes(tagFilter) || b.category.includes(tagFilter));
+  if (query) filtered = filtered.filter(b =>
+    b.title.toLowerCase().includes(query) || (b.publisher||'').toLowerCase().includes(query)
+  );
+
+  const grid  = document.getElementById('book-grid');
+  const empty = document.getElementById('books-empty');
+
+  if (!filtered.length) { grid.innerHTML=''; empty.style.display='block'; }
+  else {
+    empty.style.display='none';
+    grid.innerHTML = filtered.map(b => {
+      const statusClass = b.status==='Done' ? 'done' : b.status==='Reading' ? 'reading' : 'notstart';
+      const statusLabel = b.status==='Done' ? 'Done' : b.status==='Reading' ? 'Reading' : 'Not started';
+      const img = b.image
+        ? `<img src="${escHtml(b.image)}" alt="${escHtml(b.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=no-img-card>${escHtml(b.title.slice(0,20))}</div>'">`
+        : `<div class="no-img-card">${escHtml(b.title.slice(0,30))}</div>`;
+      return `<div class="book-card" onclick="openBook('${b.id}')">
+        <div class="book-card-cover">
+          ${img}
+          <span class="book-card-status ${statusClass}">${statusLabel}</span>
+        </div>
+        <div class="book-card-title">${escHtml(b.title)}</div>
+        <div class="book-card-pub">${escHtml(b.publisher||'')}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Tag chips
+  const allTags = [...new Set(allBooks.flatMap(b => [...b.tags, ...b.category]))].sort();
+  document.getElementById('tag-filter-row').innerHTML = allTags.map(t =>
+    `<button class="filter-chip ${tagFilter===t?'active':''}" onclick="setTagFilter('${escHtml(t)}')">${escHtml(t)}</button>`
+  ).join('');
+
+  document.getElementById('books-sub').textContent = `${filtered.length} of ${allBooks.length} books`;
+}
+
+/* ── Book modal ── */
+function openBook(id) {
+  const b = allBooks.find(x => x.id === id);
+  if (!b) return;
+  currentBook = b;
+
+  const cover = document.getElementById('modal-cover');
+  cover.innerHTML = b.image
+    ? `<img src="${escHtml(b.image)}" alt="${escHtml(b.title)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=no-img-modal>No cover</div>'">`
+    : `<div class="no-img-modal">No cover</div>`;
+
+  document.getElementById('modal-title').textContent  = b.title;
+  document.getElementById('modal-author').textContent = b.author || '—';
+
+  const sc = b.status==='Done'?'done':b.status==='Reading'?'reading':'notstart';
+  document.getElementById('modal-status').innerHTML =
+    `<span class="status-pill status-${sc}"><span class="status-dot"></span>${escHtml(b.status||'—')}</span>`;
+
+  const props = [
+    ['Category',   b.category.join(', ')  || '—'],
+    ['Tag',        b.tags.join(', ')       || '—'],
+    ['Publisher',  b.publisher             || '—'],
+    ['Type',       b.type                  || '—'],
+    ['Started',    formatDate(b.started)        ],
+    ['Completed',  formatDate(b.completed)      ],
+  ];
+  document.getElementById('modal-props').innerHTML = props.map(([k,v]) =>
+    `<div class="prop-row"><span class="prop-key">${k}</span><span class="prop-val">${escHtml(v)}</span></div>`
+  ).join('');
+
+  const notionBtn = document.getElementById('modal-notion-btn');
+  notionBtn.style.display = b.notionUrl ? 'inline-block' : 'none';
+
+  document.getElementById('book-modal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('book-modal'))
+    document.getElementById('book-modal').classList.remove('open');
+}
+
+function openNotion() {
+  if (currentBook?.notionUrl) window.open(currentBook.notionUrl, '_blank');
+}
+
+/* ── Monthly wrap-up ── */
+function renderWrapup() {
+  const done  = allBooks.filter(b => b.status==='Done' && b.completed);
+  const years = [...new Set(done.map(b => b.completed.slice(0,4)))].sort().reverse();
+  if (!wrapupYear && years.length) wrapupYear = years[0];
+
+  document.getElementById('wrapup-year-filter').innerHTML = years.map(y =>
+    `<button class="filter-chip ${wrapupYear===y?'active':''}" onclick="setWrapupYear('${y}')">${y}</button>`
+  ).join('');
+
+  const months = Array.from({length:12}, (_,i) => {
+    const m     = String(i+1).padStart(2,'0');
+    const key   = `${wrapupYear}-${m}`;
+    const books = done.filter(b => b.completed.startsWith(key));
+    const label = new Date(wrapupYear,i,1).toLocaleDateString('th-TH',{month:'long'});
+    return { label, books };
+  }).filter(m => m.books.length).reverse();
+
+  const content = document.getElementById('wrapup-content');
+  content.innerHTML = months.length ? months.map(m => `
+    <div class="wrapup-month-section">
+      <div class="wrapup-month-heading">
+        <span>${m.label}</span>
+        <span class="wrapup-month-count">${m.books.length} เล่ม</span>
+      </div>
+      <div class="wrapup-covers">
+        ${m.books.map(b => {
+          const img = b.image
+            ? `<img src="${escHtml(b.image)}" alt="${escHtml(b.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=no-img-wu>${escHtml(b.title.slice(0,12))}</div>'">`
+            : `<div class="no-img-wu">${escHtml(b.title.slice(0,18))}</div>`;
+          return `<div class="wrapup-cover" onclick="openBook('${b.id}')">
+            <div class="wrapup-cover-img">${img}</div>
+            <div class="wrapup-cover-title">${escHtml(b.title)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`).join('')
+  : '<div class="empty-state">ยังไม่มีหนังสือในปีนี้</div>';
+}
+
+function setWrapupYear(y) { wrapupYear = y; renderWrapup(); }
+
+/* ── Tag browser ── */
+function renderTags() {
+  const done = allBooks.filter(b => b.status==='Done');
+  const tagMap = {};
+  done.forEach(b => b.tags.forEach(t => {
+    if (!tagMap[t]) tagMap[t]=[];
+    tagMap[t].push(b);
+  }));
+  const sorted = Object.entries(tagMap).sort((a,b) => b[1].length-a[1].length);
+  const el = document.getElementById('tag-sections');
+  el.innerHTML = sorted.length ? sorted.map(([tag,books]) => `
+    <div class="tag-section">
+      <div class="tag-section-heading">
+        <span>${escHtml(tag)}</span>
+        <span class="tag-section-count">${books.length} เล่ม</span>
+      </div>
+      <div class="tag-covers">
+        ${books.map(b => {
+          const img = b.image
+            ? `<img src="${escHtml(b.image)}" alt="${escHtml(b.title)}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=no-img-tg>${escHtml(b.title.slice(0,12))}</div>'">`
+            : `<div class="no-img-tg">${escHtml(b.title.slice(0,18))}</div>`;
+          return `<div class="tag-cover" onclick="openBook('${b.id}')">
+            <div class="tag-cover-img">${img}</div>
+            <div class="tag-cover-title">${escHtml(b.title)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`).join('')
+  : '<div class="empty-state">ยังไม่มี tag</div>';
+}
+
+/* ── Demo data ── */
+function loadDemo() {
+  document.getElementById('config-overlay').classList.remove('open');
+  allBooks = [
+    { id:'1', title:'ความฝันพอดีคำกับรสชาติความทรงจำ', author:'กวงเฟิง', category:['Fiction'], tags:['BAKERY','FOOD'], status:'Done', completed:'2026-05-19', started:'2026-05-13', publisher:'Piccolo', image:'https://covers.openlibrary.org/b/id/8091016-M.jpg', notionUrl:'' },
+    { id:'2', title:'Atomic Habits', author:'James Clear', category:['Non-fiction'], tags:['PRODUCTIVITY'], status:'Done', completed:'2026-04-10', started:'2026-03-28', publisher:'Avery', image:'https://covers.openlibrary.org/b/id/10521270-M.jpg', notionUrl:'' },
+    { id:'3', title:'The Psychology of Money', author:'Morgan Housel', category:['Non-fiction'], tags:['FINANCE'], status:'Done', completed:'2026-04-15', started:'2026-04-01', publisher:'Harriman', image:'https://covers.openlibrary.org/b/id/10975163-M.jpg', notionUrl:'' },
+    { id:'4', title:'คาเฟ่ริมทะเล', author:'นักเขียนไทย', category:['Fiction'], tags:['FOOD','TRAVEL'], status:'Done', completed:'2026-03-20', started:'2026-03-10', publisher:'Piccolo', image:'', notionUrl:'' },
+    { id:'5', title:'Deep Work', author:'Cal Newport', category:['Non-fiction'], tags:['PRODUCTIVITY'], status:'Done', completed:'2026-02-28', started:'2026-02-15', publisher:'Grand Central', image:'https://covers.openlibrary.org/b/id/8739161-M.jpg', notionUrl:'' },
+    { id:'6', title:'Salt Fat Acid Heat', author:'Samin Nosrat', category:['Non-fiction'], tags:['FOOD','BAKERY'], status:'Done', completed:'2026-01-25', started:'2026-01-05', publisher:'Simon', image:'https://covers.openlibrary.org/b/id/8228691-M.jpg', notionUrl:'' },
+    { id:'7', title:'Show Your Work', author:'Austin Kleon', category:['Non-fiction'], tags:['CREATIVE'], status:'Done', completed:'2026-05-10', started:'2026-05-02', publisher:'Workman', image:'https://covers.openlibrary.org/b/id/8258492-M.jpg', notionUrl:'' },
+    { id:'8', title:'Sapiens', author:'Yuval Noah Harari', category:['Non-fiction'], tags:['HISTORY'], status:'Reading', completed:'', started:'2026-05-01', publisher:'Harper', image:'https://covers.openlibrary.org/b/id/8271944-M.jpg', notionUrl:'' },
+    { id:'9', title:'The Alchemist', author:'Paulo Coelho', category:['Fiction'], tags:['PHILOSOPHY'], status:'Not Started', completed:'', started:'', publisher:'HarperOne', image:'https://covers.openlibrary.org/b/id/8267113-M.jpg', notionUrl:'' },
+    { id:'10', title:'Meditations', author:'Marcus Aurelius', category:['Non-fiction'], tags:['PHILOSOPHY'], status:'Not Started', completed:'', started:'', publisher:'Penguin', image:'', notionUrl:'' },
+  ];
+  renderAll();
+}
+
+/* ── Utils ── */
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d+'T00:00:00').toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'});
+}
+
+/* ── Init ── */
+window.addEventListener('DOMContentLoaded', () => {
+  const cfg    = getConfig();
+  const cached = localStorage.getItem(DATA_KEY);
+  if (cfg) {
+    document.getElementById('config-overlay').classList.remove('open');
+    if (cached) { try { allBooks = JSON.parse(cached); renderAll(); } catch {} }
+    loadData();
+  }
+});
+</script>
+</body>
+</html>
