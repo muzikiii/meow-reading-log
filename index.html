@@ -256,7 +256,7 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 .bk-table-cover img{width:100%;height:100%;object-fit:cover;display:block;}
 .no-img-bt{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--text3);padding:2px;text-align:center;line-height:1.1;}
 .bk-table-main{flex:1;min-width:0;}
-.bk-table-title{font-size:13px;color:var(--text);font-weight:500;line-height:1.3;}
+.bk-table-title{font-size:13px;color:var(--text);font-weight:350;line-height:1.3;}
 .bk-table-pub{font-size:11px;color:var(--text3);margin-top:2px;}
 .bk-table-meta{width:300px;flex-shrink:0;display:flex;gap:10px;}
 .bk-table-meta>div{flex:1;display:flex;flex-wrap:wrap;gap:4px;align-content:flex-start;}
@@ -928,8 +928,8 @@ function renderWrapup(){
     <div class="section-title" style="margin-bottom:14px">หนังสือที่อ่านจบ — ${monthLabel}</div>
     <div class="bk-table">
       <div class="bk-table-head">
-        <div class="bk-table-cover"></div>
-        <div class="bk-table-main">ชื่อหนังสือ / สำนักพิมพ์</div>
+        <div></div>
+        <div class="bk-table-main">Book / Publisher</div>
         <div class="bk-table-meta"><div>Category</div><div>Tag</div></div>
       </div>
       ${tableRows}
