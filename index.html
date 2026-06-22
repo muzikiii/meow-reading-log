@@ -304,7 +304,38 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 .btn-primary:hover{opacity:0.85;}
 .btn-ghost{padding:10px 18px;background:none;border:1px solid var(--border2);border-radius:8px;color:var(--text2);font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer;transition:all 0.15s;}
 .btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
-@media(max-width:900px){.sidebar{width:180px;}.view{padding:22px;}.stats-row{grid-template-columns:repeat(2,1fr);}.dash-2col{grid-template-columns:1fr;}.insight-row{grid-template-columns:1fr;}.wrapup-summary{grid-template-columns:repeat(2,1fr);}}
+/* ── Left column wrapper (goal + category stacked) ── */
+.dash-left-col{display:flex;flex-direction:column;gap:14px;}
+/* ── Goal card (full size, in left col) ── */
+.goal-card-full{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow);display:flex;align-items:center;gap:20px;cursor:pointer;transition:box-shadow 0.15s;}
+.goal-card-full:hover{box-shadow:var(--shadow-hover);}
+.goal-ring-full{position:relative;width:72px;height:72px;flex-shrink:0;}
+.goal-ring-full svg{display:block;transform:rotate(-90deg);}
+.goal-ring-full-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--brick);}
+.goal-info-full{flex:1;}
+.goal-title-full{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;}
+.goal-count-full{font-family:var(--font-display);font-size:26px;color:var(--text);line-height:1.1;margin-bottom:3px;}
+.goal-count-full span{color:var(--brick);}
+.goal-edit-full{font-size:11px;color:var(--text3);text-decoration:underline;}
+.goal-card-full:hover .goal-edit-full{color:var(--accent);}
+/* ── Donut chart ── */
+.donut-wrap{display:flex;justify-content:center;margin-bottom:14px;}
+.donut-legend{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;}
+.donut-legend-item{display:flex;align-items:center;gap:6px;min-width:0;}
+.donut-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.donut-legend-label{font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.donut-legend-count{font-size:11px;font-weight:500;color:var(--text3);flex-shrink:0;}
+/* ── Goal modal ── */
+.goal-modal-overlay{display:none;position:fixed;inset:0;background:rgba(46,35,24,0.45);z-index:150;align-items:center;justify-content:center;}
+.goal-modal-overlay.open{display:flex;}
+.goal-modal-box{background:var(--bg);border:1px solid var(--border2);border-radius:14px;padding:26px 28px;width:320px;max-width:90vw;}
+.goal-modal-title{font-family:var(--font-display);font-size:18px;color:var(--text);margin-bottom:4px;}
+.goal-modal-sub{font-size:12px;color:var(--text3);margin-bottom:18px;}
+.goal-modal-input{width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'Fraunces',Georgia,serif;font-size:28px;font-weight:400;outline:none;transition:border-color 0.15s;text-align:center;}
+.goal-modal-input:focus{border-color:var(--brick);}
+.goal-modal-hint{font-size:11px;color:var(--text3);text-align:center;margin-top:6px;margin-bottom:18px;}
+.goal-modal-actions{display:flex;gap:8px;}
+@media(max-width:900px){.sidebar{width:180px;}.view{padding:22px;}.stats-row{grid-template-columns:repeat(2,1fr);}.dash-2col{grid-template-columns:1fr;}.dash-left-col{gap:14px;}.insight-row{grid-template-columns:1fr;}.wrapup-summary{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:640px){.shell{flex-direction:column;}.sidebar{width:100%;height:auto;position:relative;padding:12px;flex-direction:row;flex-wrap:wrap;gap:4px;}.logo,.sidebar-footer,.nav-label{display:none;}.nav-section{padding:0;}.view{padding:14px;}.stats-row{grid-template-columns:repeat(2,1fr);}.book-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));}.hero{flex-direction:column;}.book-hover{display:none;}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 </style>
@@ -321,6 +352,10 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
       <button class="nav-item active" onclick="showView('dashboard',this)"><span class="nav-icon">◈</span> Dashboard</button>
       <button class="nav-item" onclick="showView('books',this)"><span class="nav-icon">◫</span> All books <span class="nav-count" id="nav-count-books">—</span></button>
       <button class="nav-item" onclick="showView('wrapup',this)"><span class="nav-icon">◷</span> Monthly wrap-up</button>
+    </div>
+    <div class="nav-section" style="margin-top:8px">
+      <div class="nav-label">Settings</div>
+      <button class="nav-item" onclick="openGoalModal()"><span class="nav-icon">◎</span> Reading Goal <span class="nav-count" id="nav-goal-badge">—</span></button>
     </div>
     <div class="sidebar-footer">
       <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn"><span id="theme-icon">☾</span> <span id="theme-label">Dark mode</span></button>
@@ -342,17 +377,37 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
         <div class="stat-card accent-brick"><div class="stat-num" id="stat-notstart">—</div><div class="stat-label">Not started</div></div>
       </div>
       <div class="dash-2col">
-        <div class="chart-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-            <div class="section-title" style="margin-bottom:0">By category</div>
-            <div class="cat-tabs">
-              <button class="cat-tab active" onclick="setCatScope('total',this)">Total</button>
-              <button class="cat-tab" onclick="setCatScope('year',this)">Year</button>
-              <button class="cat-tab" onclick="setCatScope('month',this)">Month</button>
+        <!-- Left column: Goal + By Category stacked -->
+        <div class="dash-left-col">
+          <div class="goal-card-full" onclick="openGoalModal()">
+            <div class="goal-ring-full">
+              <svg width="72" height="72" viewBox="0 0 72 72">
+                <circle cx="36" cy="36" r="28" fill="none" stroke="var(--surface2)" stroke-width="6"/>
+                <circle id="goal-ring-fg" cx="36" cy="36" r="28" fill="none" stroke="var(--brick)" stroke-width="6"
+                  stroke-linecap="round" stroke-dasharray="175.9" stroke-dashoffset="175.9"
+                  style="transform-origin:50% 50%;transition:stroke-dashoffset 0.6s ease"/>
+              </svg>
+              <div class="goal-ring-full-label" id="goal-ring-label">0%</div>
+            </div>
+            <div class="goal-info-full">
+              <div class="goal-title-full">Reading Goal <span id="goal-year-label"></span></div>
+              <div class="goal-count-full"><span id="goal-current">0</span> / <span id="goal-target">—</span> books</div>
+              <div class="goal-edit-full">tap to edit goal</div>
             </div>
           </div>
-          <div id="chart-category"></div>
+          <div class="chart-card" style="flex:1;display:flex;flex-direction:column;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div class="section-title" style="margin-bottom:0">By category</div>
+              <div class="cat-tabs">
+                <button class="cat-tab active" onclick="setCatScope('total',this)">Total</button>
+                <button class="cat-tab" onclick="setCatScope('year',this)">Year</button>
+                <button class="cat-tab" onclick="setCatScope('month',this)">Month</button>
+              </div>
+            </div>
+            <div id="chart-category" style="flex:1;display:flex;align-items:center;justify-content:center;"></div>
+          </div>
         </div>
+        <!-- Right column: Books per month (stretches to match left column height) -->
         <div class="chart-card">
           <div class="section-title">Books per month — <span id="year-label"></span></div>
           <div id="chart-monthly"></div>
@@ -433,6 +488,21 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
     <div class="mpop-covers" id="month-modal-covers"></div>
     <div class="modal-actions">
       <button class="btn-close" onclick="document.getElementById('month-modal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Goal modal -->
+<div class="goal-modal-overlay" id="goal-modal" onclick="closeGoalModal(event)">
+  <div class="goal-modal-box">
+    <div class="goal-modal-title">Reading Goal</div>
+    <div class="goal-modal-sub">ตั้งเป้าจำนวนเล่มสำหรับปีนี้</div>
+    <input class="goal-modal-input" id="goal-input" type="number" min="1" max="999" placeholder="24"
+      onkeydown="if(event.key==='Enter')saveGoal()">
+    <div class="goal-modal-hint">กด Enter หรือ Save เพื่อบันทึก</div>
+    <div class="goal-modal-actions">
+      <button class="btn-primary" onclick="saveGoal()">Save</button>
+      <button class="btn-ghost" onclick="document.getElementById('goal-modal').classList.remove('open')">Cancel</button>
     </div>
   </div>
 </div>
@@ -602,6 +672,7 @@ function renderDashboard(){
   document.getElementById('year-label').textContent=thisYear;
   document.getElementById('mp-year-label').textContent=thisYear;
 
+  renderGoal(yearDone.length);
   renderCategoryChart();
   renderMonthlyChart(done,parseInt(thisYear));
   renderDashMonthlyProgress(parseInt(thisYear));
@@ -623,7 +694,7 @@ function renderDashMonthlyProgress(year){
     rows.push(`<div class="mwrap-row">
       <div class="mwrap-label">${label}</div>
       <div class="mwrap-covers">${covers||'<span class="mwrap-empty">—</span>'}</div>
-      <div class="mwrap-count">${books.length?books.length+' เล่ม':''}</div>
+      <div class="mwrap-count">${books.length?books.length+' ':''}</div>
     </div>`);
   }
   document.getElementById('dash-monthly-progress').innerHTML=rows.join('');
@@ -665,18 +736,35 @@ function renderHero(){
 
 function renderGoal(current){
   const pct=Math.min(100,Math.round(current/readingGoal*100));
-  const circ=176;
-  document.getElementById('goal-ring-fg').style.strokeDashoffset=circ-(circ*pct/100);
+  const circ=175.9; // 2π×28
+  const offset=circ-(circ*pct/100);
+  document.getElementById('goal-ring-fg').style.strokeDashoffset=offset;
   document.getElementById('goal-ring-label').textContent=pct+'%';
   document.getElementById('goal-current').textContent=current;
   document.getElementById('goal-target').textContent=readingGoal;
+  const yl=document.getElementById('goal-year-label');
+  if(yl)yl.textContent=new Date().getFullYear();
+  const badge=document.getElementById('nav-goal-badge');
+  if(badge)badge.textContent=current+'/'+readingGoal;
 }
 
-function editGoal(){
-  const v=prompt('ตั้งเป้าหมายปีนี้กี่เล่ม?',readingGoal);
-  const n=parseInt(v);
-  if(n&&n>0){readingGoal=n;localStorage.setItem(GOAL_KEY,n);renderDashboard();}
+function openGoalModal(){
+  document.getElementById('goal-input').value=readingGoal;
+  document.getElementById('goal-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('goal-input').select(),80);
 }
+function closeGoalModal(e){if(e.target===document.getElementById('goal-modal'))document.getElementById('goal-modal').classList.remove('open');}
+function saveGoal(){
+  const n=parseInt(document.getElementById('goal-input').value);
+  if(n&&n>0){
+    readingGoal=n;
+    localStorage.setItem(GOAL_KEY,n);
+    document.getElementById('goal-modal').classList.remove('open');
+    renderDashboard();
+  }
+}
+
+function editGoal(){openGoalModal();}
 
 function renderStreak(done){
   // นับเดือนติดต่อกัน (ย้อนจากเดือนปัจจุบัน) ที่มีหนังสืออ่านจบ
@@ -719,7 +807,55 @@ function countBy(books,field){
   return Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
 }
 
+const DONUT_COLORS=['#6e9072','#b07a35','#7b9eb5','#a67c8e','#8fa85c','#c4875a','#6b8fa8','#c4a85a','#7aab8c','#b09060'];
+
+function renderDonutChart(id,data){
+  const el=document.getElementById(id);
+  if(!data.length){el.innerHTML='<div style="color:var(--text3);font-size:12px;padding:6px 0">No data yet</div>';return;}
+  const total=data.reduce((s,[,c])=>s+c,0);
+  const cx=110,cy=90,r=44,sw=17;
+  const circ=2*Math.PI*r;
+  const labelR=r+sw/2+20; // 44+8.5+20=72.5
+  let cumArc=0;
+  const slices=[],labels=[];
+  data.forEach(([label,count],i)=>{
+    const arc=(count/total)*circ;
+    const gap=Math.min(2,arc*0.04);
+    const mid=((cumArc+arc/2)/circ)*2*Math.PI;
+    const lx=cx+labelR*Math.sin(mid);
+    const ly=cy-labelR*Math.cos(mid);
+    const anchor=lx<cx-8?'end':lx>cx+8?'start':'middle';
+    const color=DONUT_COLORS[i%DONUT_COLORS.length];
+    slices.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
+      stroke="${color}" stroke-width="${sw}"
+      stroke-dasharray="${(arc-gap).toFixed(2)} ${(circ-arc+gap).toFixed(2)}"
+      stroke-dashoffset="${(circ/4-cumArc).toFixed(2)}"
+      style="transition:stroke-dashoffset 0.5s ease;"/>`);
+    if(arc/circ>0.04){
+      const lbl=label.length>14?label.slice(0,13)+'…':label;
+      labels.push(`<text text-anchor="${anchor}" fill="${color}">
+        <tspan x="${lx.toFixed(1)}" y="${(ly-2).toFixed(1)}" font-size="14" font-family="Fraunces,Georgia,serif">${escHtml(lbl)}</tspan>
+        <tspan x="${lx.toFixed(1)}" dy="13" font-size="8.5" font-family="Sarabun,sans-serif" opacity="0.85">(${count} เล่ม)</tspan>
+      </text>`);
+    }
+    cumArc+=arc;
+  });
+  el.innerHTML=`
+    <div class="donut-wrap" style="overflow:visible;padding:0 8px;">
+      <svg viewBox="0 0 220 180" style="width:100%;max-width:260px;height:auto;display:block;overflow:visible;">
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="${sw}"/>
+        ${slices.join('')}
+        ${labels.join('')}
+        <text x="${cx}" y="${cy-3}" text-anchor="middle" font-size="20"
+          font-family="Fraunces,Georgia,serif" fill="var(--text)">${total}</text>
+        <text x="${cx}" y="${cy+12}" text-anchor="middle" font-size="8"
+          font-family="Sarabun,sans-serif" fill="var(--text3)" letter-spacing="0.1em">BOOKS</text>
+      </svg>
+    </div>`;
+}
+
 function renderBarChart(id,data,color){
+  if(id==='chart-category'){renderDonutChart(id,data);return;}
   const el=document.getElementById(id);
   if(!data.length){el.innerHTML='<div style="color:var(--text3);font-size:12px;padding:6px 0">No data yet</div>';return;}
   const max=data[0][1];
@@ -767,7 +903,7 @@ function openMonthPopup(year,monthIdx){
   const key=`${year}-${String(monthIdx+1).padStart(2,'0')}`;
   const books=allBooks.filter(b=>b.status==='Done'&&b.completed?.startsWith(key));
   const label=new Date(year,monthIdx,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
-  document.getElementById('month-modal-title').textContent=`${label} · ${books.length} เล่ม`;
+  document.getElementById('month-modal-title').textContent=`${label} (${books.length} เล่ม)`;
   const el=document.getElementById('month-modal-covers');
   el.innerHTML=books.length?books.map(b=>`
     <div class="mpop-cover" onclick="document.getElementById('month-modal').classList.remove('open');openBook('${b.id}')">
