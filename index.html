@@ -598,7 +598,7 @@ function renderDashboard(){
   document.getElementById('stat-year').textContent=yearDone.length;
   document.getElementById('stat-month').textContent=done.filter(b=>b.completed?.startsWith(thisMonth)).length;
   document.getElementById('stat-notstart').textContent=notStart.length;
-  document.getElementById('dash-sub').textContent=`อัปเดตล่าสุด: ${now.toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'})}`;
+  document.getElementById('dash-sub').textContent=`อัปเดตล่าสุด: ${now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
   document.getElementById('year-label').textContent=thisYear;
   document.getElementById('mp-year-label').textContent=thisYear;
 
@@ -615,7 +615,7 @@ function renderDashMonthlyProgress(year){
   for(let i=0;i<12;i++){
     const key=`${year}-${String(i+1).padStart(2,'0')}`;
     const books=done.filter(b=>b.completed.startsWith(key));
-    const label=new Date(year,i,1).toLocaleDateString('th-TH',{month:'short'});
+    const label=new Date(year,i,1).toLocaleDateString('en-GB',{month:'short'});
     const covers=books.map(b=>`
       <div class="mwrap-cover" onclick="openBook('${b.id}')" title="${escHtml(b.title)}">
         ${coverImgHtml(b,'mwrap-noimg',6)}
@@ -751,7 +751,7 @@ function renderMonthlyChart(done,year){
     const m=String(i+1).padStart(2,'0');
     const key=`${year}-${m}`;
     const books=done.filter(b=>b.completed?.startsWith(key));
-    const label=new Date(year,i,1).toLocaleDateString('th-TH',{month:'short'});
+    const label=new Date(year,i,1).toLocaleDateString('en-GB',{month:'short'});
     return{label,key,books,monthIdx:i};
   });
   const max=Math.max(1,...months.map(m=>m.books.length));
@@ -766,7 +766,7 @@ function renderMonthlyChart(done,year){
 function openMonthPopup(year,monthIdx){
   const key=`${year}-${String(monthIdx+1).padStart(2,'0')}`;
   const books=allBooks.filter(b=>b.status==='Done'&&b.completed?.startsWith(key));
-  const label=new Date(year,monthIdx,1).toLocaleDateString('th-TH',{month:'long',year:'numeric'});
+  const label=new Date(year,monthIdx,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
   document.getElementById('month-modal-title').textContent=`${label} · ${books.length} เล่ม`;
   const el=document.getElementById('month-modal-covers');
   el.innerHTML=books.length?books.map(b=>`
@@ -906,7 +906,7 @@ function renderWrapup(){
   const monthKey=`${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}`;
   const monthBooks=done.filter(b=>b.completed.startsWith(monthKey))
     .sort((a,b)=>(a.completed||'').localeCompare(b.completed||''));
-  const monthLabel=new Date(calViewYear,calViewMonth,1).toLocaleDateString('th-TH',{month:'long',year:'numeric'});
+  const monthLabel=new Date(calViewYear,calViewMonth,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
   let tableRows='';
   if(monthBooks.length){
     tableRows=monthBooks.map(b=>`
@@ -943,7 +943,7 @@ function renderCalendarGrid(done){
   const y=calViewYear, mi=calViewMonth;
   const key=`${y}-${String(mi+1).padStart(2,'0')}`;
   const books=done.filter(b=>b.completed.startsWith(key));
-  const label=new Date(y,mi,1).toLocaleDateString('th-TH',{month:'long',year:'numeric'});
+  const label=new Date(y,mi,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
   const daysInMonth=new Date(y,mi+1,0).getDate();
   const firstDay=new Date(y,mi,1).getDay();
   const dayMap={};
@@ -1018,7 +1018,7 @@ function loadDemo(){
 
 /* ── Utils ── */
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function formatDate(d){if(!d)return'—';return new Date(d+'T00:00:00').toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'});}
+function formatDate(d){if(!d)return'—';return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
 
 /* ── Theme toggle ── */
 const THEME_KEY='reading_log_theme';
