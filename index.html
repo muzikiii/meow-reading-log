@@ -75,7 +75,7 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 .hero-meta{display:flex;gap:8px;flex-wrap:wrap;}
 .hero-empty{color:var(--text3);font-size:13px;display:flex;align-items:center;}
 /* Stats */
-.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);}
 .stat-card.accent-green{border-left:3px solid var(--green);}
 .stat-card.accent-brick{border-left:3px solid var(--brick);}
@@ -95,7 +95,7 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 .goal-count{font-family:var(--font-display);font-size:22px;color:var(--text);}
 .goal-edit{font-size:11px;color:var(--text3);cursor:pointer;text-decoration:underline;margin-top:2px;display:inline-block;}
 .goal-edit:hover{color:var(--accent);}
-.dash-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;}
+.dash-2col{display:grid;grid-template-columns:2fr 3fr;gap:14px;margin-bottom:24px;}
 /* Section / chart cards */
 .section-title{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;}
 .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow);}
@@ -236,7 +236,10 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 .mwrap-cover img{width:100%;height:100%;object-fit:cover;display:block;}
 .mwrap-noimg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:6px;color:var(--text3);padding:2px;text-align:center;line-height:1.1;}
 .mwrap-empty{font-size:12px;color:var(--text3);}
-.mwrap-count{flex-shrink:0;font-size:12px;color:var(--text3);min-width:44px;text-align:right;}
+.mwrap-count-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0;min-width:80px;justify-content:flex-end;}
+.mwrap-count{font-size:12px;color:var(--text3);}
+.mwrap-popup-btn{background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;padding:3px 6px;border-radius:5px;transition:background 0.12s;line-height:1;font-family:'Sarabun',sans-serif;}
+.mwrap-popup-btn:hover{background:var(--accent2);}
 /* Currently reading grid (dashboard) */
 .reading-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:14px;}
 .reading-card{cursor:pointer;transition:transform 0.15s;}
@@ -306,15 +309,16 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 .btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
 /* ── Left column wrapper (goal + category stacked) ── */
 .dash-left-col{display:flex;flex-direction:column;gap:14px;}
-/* ── Goal card (full size, in left col) ── */
-.goal-card-full{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow);display:flex;align-items:center;gap:20px;cursor:pointer;transition:box-shadow 0.15s;}
+/* ── Goal card (vertical layout) ── */
+.goal-card-full{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:18px;cursor:pointer;transition:box-shadow 0.15s;}
 .goal-card-full:hover{box-shadow:var(--shadow-hover);}
-.goal-ring-full{position:relative;width:72px;height:72px;flex-shrink:0;}
+.goal-ring-wrap{flex-shrink:0;}
+.goal-ring-full{position:relative;width:72px;height:72px;}
 .goal-ring-full svg{display:block;transform:rotate(-90deg);}
-.goal-ring-full-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--brick);}
+.goal-ring-full-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--brick);}
 .goal-info-full{flex:1;}
-.goal-title-full{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;}
-.goal-count-full{font-family:var(--font-display);font-size:26px;color:var(--text);line-height:1.1;margin-bottom:3px;}
+.goal-title-full{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
+.goal-count-full{font-family:var(--font-display);font-size:24px;color:var(--text);line-height:1.1;margin-bottom:4px;}
 .goal-count-full span{color:var(--brick);}
 .goal-edit-full{font-size:11px;color:var(--text3);text-decoration:underline;}
 .goal-card-full:hover .goal-edit-full{color:var(--accent);}
@@ -335,7 +339,7 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 .goal-modal-input:focus{border-color:var(--brick);}
 .goal-modal-hint{font-size:11px;color:var(--text3);text-align:center;margin-top:6px;margin-bottom:18px;}
 .goal-modal-actions{display:flex;gap:8px;}
-@media(max-width:900px){.sidebar{width:180px;}.view{padding:22px;}.stats-row{grid-template-columns:repeat(2,1fr);}.dash-2col{grid-template-columns:1fr;}.dash-left-col{gap:14px;}.insight-row{grid-template-columns:1fr;}.wrapup-summary{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:900px){.sidebar{width:180px;}.view{padding:22px;}.stats-row{grid-template-columns:repeat(3,1fr);}.dash-2col{grid-template-columns:1fr;}.dash-left-col{gap:14px;}.insight-row{grid-template-columns:1fr;}.wrapup-summary{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:640px){.shell{flex-direction:column;}.sidebar{width:100%;height:auto;position:relative;padding:12px;flex-direction:row;flex-wrap:wrap;gap:4px;}.logo,.sidebar-footer,.nav-label{display:none;}.nav-section{padding:0;}.view{padding:14px;}.stats-row{grid-template-columns:repeat(2,1fr);}.book-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));}.hero{flex-direction:column;}.book-hover{display:none;}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 </style>
@@ -375,11 +379,12 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
         <div class="stat-card accent-brown"><div class="stat-num" id="stat-year">—</div><div class="stat-label">This year</div></div>
         <div class="stat-card accent-brown"><div class="stat-num" id="stat-month">—</div><div class="stat-label">This month</div></div>
         <div class="stat-card accent-brick"><div class="stat-num" id="stat-notstart">—</div><div class="stat-label">Not started</div></div>
+        <div class="stat-card"><div class="stat-num" id="stat-dnf" style="color:var(--text3)">—</div><div class="stat-label">DNF</div></div>
       </div>
       <div class="dash-2col">
-        <!-- Left column: Goal + By Category stacked -->
-        <div class="dash-left-col">
-          <div class="goal-card-full" onclick="openGoalModal()">
+        <!-- Left: Reading Goal (horizontal) -->
+        <div class="goal-card-full" onclick="openGoalModal()">
+          <div class="goal-ring-wrap">
             <div class="goal-ring-full">
               <svg width="72" height="72" viewBox="0 0 72 72">
                 <circle cx="36" cy="36" r="28" fill="none" stroke="var(--surface2)" stroke-width="6"/>
@@ -389,28 +394,24 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
               </svg>
               <div class="goal-ring-full-label" id="goal-ring-label">0%</div>
             </div>
-            <div class="goal-info-full">
-              <div class="goal-title-full">Reading Goal <span id="goal-year-label"></span></div>
-              <div class="goal-count-full"><span id="goal-current">0</span> / <span id="goal-target">—</span> books</div>
-              <div class="goal-edit-full">tap to edit goal</div>
-            </div>
           </div>
-          <div class="chart-card" style="flex:1;display:flex;flex-direction:column;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-              <div class="section-title" style="margin-bottom:0">By category</div>
-              <div class="cat-tabs">
-                <button class="cat-tab active" onclick="setCatScope('total',this)">Total</button>
-                <button class="cat-tab" onclick="setCatScope('year',this)">Year</button>
-                <button class="cat-tab" onclick="setCatScope('month',this)">Month</button>
-              </div>
-            </div>
-            <div id="chart-category" style="flex:1;display:flex;align-items:center;justify-content:center;"></div>
+          <div class="goal-info-full">
+            <div class="goal-title-full">Reading Goal <span id="goal-year-label"></span></div>
+            <div class="goal-count-full"><span id="goal-current">0</span> / <span id="goal-target">—</span> books</div>
+            <div class="goal-edit-full">tap to edit goal</div>
           </div>
         </div>
-        <!-- Right column: Books per month (stretches to match left column height) -->
-        <div class="chart-card">
-          <div class="section-title">Books per month — <span id="year-label"></span></div>
-          <div id="chart-monthly"></div>
+        <!-- Right: By Category -->
+        <div class="chart-card" style="display:flex;flex-direction:column;padding:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div class="section-title" style="margin-bottom:0">By category</div>
+            <div class="cat-tabs">
+              <button class="cat-tab active" onclick="setCatScope('total',this)">Total</button>
+              <button class="cat-tab" onclick="setCatScope('year',this)">Year</button>
+              <button class="cat-tab" onclick="setCatScope('month',this)">Month</button>
+            </div>
+          </div>
+          <div id="chart-category"></div>
         </div>
       </div>
       <div class="chart-card full" style="margin-top:18px">
@@ -662,19 +663,19 @@ function renderDashboard(){
   const thisMonth=`${thisYear}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const done=allBooks.filter(b=>b.status==='Done');
   const notStart=allBooks.filter(b=>(b.status||'').toLowerCase()==='not started');
+  const dnf=allBooks.filter(b=>(b.status||'').toUpperCase()==='DNF'||b.status==='Did Not Finish');
   const yearDone=done.filter(b=>b.completed?.startsWith(thisYear));
 
   document.getElementById('stat-total').textContent=done.length;
   document.getElementById('stat-year').textContent=yearDone.length;
   document.getElementById('stat-month').textContent=done.filter(b=>b.completed?.startsWith(thisMonth)).length;
   document.getElementById('stat-notstart').textContent=notStart.length;
+  document.getElementById('stat-dnf').textContent=dnf.length;
   document.getElementById('dash-sub').textContent=`อัปเดตล่าสุด: ${now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
-  document.getElementById('year-label').textContent=thisYear;
   document.getElementById('mp-year-label').textContent=thisYear;
 
   renderGoal(yearDone.length);
   renderCategoryChart();
-  renderMonthlyChart(done,parseInt(thisYear));
   renderDashMonthlyProgress(parseInt(thisYear));
   renderDashReading();
 }
@@ -691,10 +692,14 @@ function renderDashMonthlyProgress(year){
       <div class="mwrap-cover" onclick="openBook('${b.id}')" title="${escHtml(b.title)}">
         ${coverImgHtml(b,'mwrap-noimg',6)}
       </div>`).join('');
+    const popupBtn=books.length?`<button class="mwrap-popup-btn" onclick="openMonthPopup(${year},${i})">▶</button>`:'';
     rows.push(`<div class="mwrap-row">
       <div class="mwrap-label">${label}</div>
       <div class="mwrap-covers">${covers||'<span class="mwrap-empty">—</span>'}</div>
-      <div class="mwrap-count">${books.length?books.length+' ':''}</div>
+      <div class="mwrap-count-wrap">
+        <span class="mwrap-count">${books.length?books.length+' เล่ม':''}</span>
+        ${popupBtn}
+      </div>
     </div>`);
   }
   document.getElementById('dash-monthly-progress').innerHTML=rows.join('');
@@ -808,12 +813,19 @@ function countBy(books,field){
 }
 
 const DONUT_COLORS=['#6e9072','#b07a35','#7b9eb5','#a67c8e','#8fa85c','#c4875a','#6b8fa8','#c4a85a','#7aab8c','#b09060'];
+// สีคงที่ตามชื่อ category — ไม่สลับแม้ข้อมูลจะเปลี่ยน
+function getCatColor(name){
+  const fixed={'Fiction':'#b07a35','Non-fiction':'#6e9072','Non-Fiction':'#6e9072','fiction':'#b07a35','non-fiction':'#6e9072'};
+  if(fixed[name])return fixed[name];
+  let h=0;for(let c of name)h=(Math.imul(h,31)+c.charCodeAt(0))>>>0;
+  return DONUT_COLORS[h%DONUT_COLORS.length];
+}
 
 function renderDonutChart(id,data){
   const el=document.getElementById(id);
   if(!data.length){el.innerHTML='<div style="color:var(--text3);font-size:12px;padding:6px 0">No data yet</div>';return;}
   const total=data.reduce((s,[,c])=>s+c,0);
-  const cx=110,cy=90,r=44,sw=17;
+  const cx=95,cy=78,r=36,sw=14;
   const circ=2*Math.PI*r;
   const labelR=r+sw/2+20; // 44+8.5+20=72.5
   let cumArc=0;
@@ -825,7 +837,7 @@ function renderDonutChart(id,data){
     const lx=cx+labelR*Math.sin(mid);
     const ly=cy-labelR*Math.cos(mid);
     const anchor=lx<cx-8?'end':lx>cx+8?'start':'middle';
-    const color=DONUT_COLORS[i%DONUT_COLORS.length];
+    const color=getCatColor(label);
     slices.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
       stroke="${color}" stroke-width="${sw}"
       stroke-dasharray="${(arc-gap).toFixed(2)} ${(circ-arc+gap).toFixed(2)}"
@@ -842,7 +854,7 @@ function renderDonutChart(id,data){
   });
   el.innerHTML=`
     <div class="donut-wrap" style="overflow:visible;padding:0 8px;">
-      <svg viewBox="0 0 220 180" style="width:100%;max-width:260px;height:auto;display:block;overflow:visible;">
+      <svg viewBox="0 0 190 156" style="width:100%;max-width:220px;height:auto;display:block;overflow:visible;">
         <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="${sw}"/>
         ${slices.join('')}
         ${labels.join('')}
@@ -855,10 +867,20 @@ function renderDonutChart(id,data){
 }
 
 function renderBarChart(id,data,color){
-  if(id==='chart-category'){renderDonutChart(id,data);return;}
   const el=document.getElementById(id);
   if(!data.length){el.innerHTML='<div style="color:var(--text3);font-size:12px;padding:6px 0">No data yet</div>';return;}
   const max=data[0][1];
+  if(id==='chart-category'){
+    el.innerHTML=data.map(([label,count])=>`
+      <div class="mbar-row" style="cursor:default;">
+        <span class="mbar-label" style="width:88px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(label)}">${escHtml(label)}</span>
+        <div class="mbar-track">
+          <div class="mbar-fill" style="width:${(count/max*100).toFixed(1)}%;background:${getCatColor(label)};border-radius:4px;"></div>
+        </div>
+        <span class="mbar-count">${count} เล่ม</span>
+      </div>`).join('');
+    return;
+  }
   el.innerHTML=data.map(([label,count])=>`
     <div class="bar-item">
       <div class="bar-meta"><span>${label}</span><span>${count}</span></div>
