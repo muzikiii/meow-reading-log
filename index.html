@@ -138,7 +138,12 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 .filter-chip{padding:5px 14px;border-radius:20px;border:1px solid var(--border2);background:none;color:var(--text2);font-size:12px;font-family:'Sarabun',sans-serif;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
 .filter-chip:hover{border-color:var(--accent);color:var(--accent);}
 .filter-chip.active{background:var(--accent2);border-color:var(--accent);color:var(--accent);}
-#tag-filter-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:18px;}
+#cat-filter-row,#tag-filter-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;align-items:center;}
+.filter-row-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-right:4px;flex-shrink:0;}
+.tag-chip{padding:4px 10px;border-radius:20px;border:1px solid;font-size:12px;font-family:'Sarabun',sans-serif;cursor:pointer;transition:opacity 0.15s;white-space:nowrap;}
+.tag-chip:hover{opacity:0.75;}
+.tag-chip.active{box-shadow:0 0 0 2px var(--text);}
+.filter-section-gap{height:8px;}
 .book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:14px;}
 .book-card{cursor:pointer;transition:transform 0.15s;position:relative;}
 .book-card:hover{transform:translateY(-2px);}
@@ -340,7 +345,31 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 .goal-modal-hint{font-size:11px;color:var(--text3);text-align:center;margin-top:6px;margin-bottom:18px;}
 .goal-modal-actions{display:flex;gap:8px;}
 @media(max-width:900px){.sidebar{width:180px;}.view{padding:22px;}.stats-row{grid-template-columns:repeat(3,1fr);}.dash-2col{grid-template-columns:1fr;}.dash-left-col{gap:14px;}.insight-row{grid-template-columns:1fr;}.wrapup-summary{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:640px){.shell{flex-direction:column;}.sidebar{width:100%;height:auto;position:relative;padding:12px;flex-direction:row;flex-wrap:wrap;gap:4px;}.logo,.sidebar-footer,.nav-label{display:none;}.nav-section{padding:0;}.view{padding:14px;}.stats-row{grid-template-columns:repeat(2,1fr);}.book-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));}.hero{flex-direction:column;}.book-hover{display:none;}}
+/* ── Mobile nav dropdown ── */
+.mobile-nav{display:none;position:relative;z-index:50;background:var(--surface);border-bottom:1px solid var(--border2);}
+.mobile-nav-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;}
+.mobile-nav-logo{font-family:var(--font-display);font-size:15px;color:var(--accent);}
+.mobile-nav-logo em{color:var(--brick);font-style:italic;}
+.mobile-nav-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--text);cursor:pointer;transition:border-color 0.15s;}
+.mobile-nav-btn:hover{border-color:var(--accent);}
+.mobile-nav-dropdown{display:none;position:absolute;top:calc(100% + 4px);right:16px;background:var(--surface);border:1px solid var(--border2);border-radius:12px;box-shadow:var(--shadow-hover);min-width:200px;overflow:hidden;z-index:200;}
+.mobile-nav-dropdown.open{display:block;}
+.mobile-nav-dd-item{display:flex;align-items:center;gap:10px;width:100%;padding:11px 16px;background:none;border:none;text-align:left;font-family:'Sarabun',sans-serif;font-size:13px;color:var(--text2);cursor:pointer;transition:background 0.12s;}
+.mobile-nav-dd-item:hover{background:var(--surface2);}
+.mobile-nav-dd-item.active{color:var(--accent);font-weight:500;background:var(--accent2);}
+.mobile-nav-dd-icon{font-size:13px;opacity:0.65;}
+.mobile-nav-dd-divider{height:1px;background:var(--border);margin:4px 0;}
+@media(max-width:640px){
+  .mobile-nav{display:block;}
+  .sidebar{display:none;}
+  .shell{flex-direction:column;}
+  .view{padding:14px;}
+  .stats-row{grid-template-columns:repeat(2,1fr);}
+  .dash-2col{grid-template-columns:1fr;}
+  .book-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));}
+  .hero{flex-direction:column;}
+  .book-hover{display:none;}
+}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 </style>
 </head>
@@ -366,6 +395,32 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
       <button class="sync-btn" onclick="loadData()">↻ Sync Notion</button>
     </div>
   </nav>
+  <!-- Mobile nav (visible on small screens only) -->
+  <div class="mobile-nav" id="mobile-nav">
+    <div class="mobile-nav-bar">
+      <div class="mobile-nav-logo"><em>MEOW</em> Reading Log</div>
+      <button class="mobile-nav-btn" onclick="toggleMobileNav()">
+        <span id="mobile-nav-current">Dashboard</span>
+        <span class="mobile-nav-arrow" id="mobile-nav-arrow">▾</span>
+      </button>
+    </div>
+    <div class="mobile-nav-dropdown" id="mobile-nav-dropdown">
+      <button class="mobile-nav-dd-item active" id="mdd-dashboard" onclick="mobileNav('dashboard','Dashboard')">
+        <span class="mobile-nav-dd-icon">◈</span> Dashboard
+      </button>
+      <button class="mobile-nav-dd-item" id="mdd-books" onclick="mobileNav('books','All books')">
+        <span class="mobile-nav-dd-icon">◫</span> All books
+      </button>
+      <button class="mobile-nav-dd-item" id="mdd-wrapup" onclick="mobileNav('wrapup','Monthly wrap-up')">
+        <span class="mobile-nav-dd-icon">◷</span> Monthly wrap-up
+      </button>
+      <div class="mobile-nav-dd-divider"></div>
+      <button class="mobile-nav-dd-item" onclick="openGoalModal();closeMobileNav()">
+        <span class="mobile-nav-dd-icon">◎</span> Reading Goal
+      </button>
+    </div>
+  </div>
+
   <main class="main">
 
     <!-- Dashboard -->
@@ -445,7 +500,9 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
         <button class="filter-chip" data-filter="Reading" onclick="setStatusFilter('Reading',this)">Reading</button>
         <button class="filter-chip" data-filter="Not Started" onclick="setStatusFilter('Not Started',this)">Not started</button>
       </div>
+      <div id="cat-filter-row"></div>
       <div id="tag-filter-row"></div>
+      <div class="filter-section-gap"></div>
       <div class="book-grid" id="book-grid"></div>
       <div id="books-empty" class="empty-state" style="display:none">No books match this filter.</div>
     </div>
@@ -537,6 +594,7 @@ const GOAL_KEY='reading_log_goal';
 let allBooks=[];
 let statusFilter='all';
 let tagFilter=null;
+let catFilter=null;
 let catScope='total';
 let wrapupYear=null;
 let calViewYear=null;   // year currently shown in calendar grid
@@ -562,6 +620,28 @@ function showView(id,btn){
   document.getElementById('view-'+id).classList.add('active');
   if(btn)btn.classList.add('active');
 }
+function toggleMobileNav(){
+  const dd=document.getElementById('mobile-nav-dropdown');
+  const arrow=document.getElementById('mobile-nav-arrow');
+  dd.classList.toggle('open');
+  arrow.textContent=dd.classList.contains('open')?'▴':'▾';
+}
+function closeMobileNav(){
+  const dd=document.getElementById('mobile-nav-dropdown');
+  if(dd){dd.classList.remove('open');document.getElementById('mobile-nav-arrow').textContent='▾';}
+}
+function mobileNav(id,label){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.getElementById('mobile-nav-current').textContent=label;
+  document.querySelectorAll('.mobile-nav-dd-item').forEach(el=>el.classList.remove('active'));
+  const t=document.getElementById('mdd-'+id);
+  if(t)t.classList.add('active');
+  closeMobileNav();
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#mobile-nav'))closeMobileNav();
+});
 
 /* ── Load data ── */
 async function loadData(){
@@ -937,12 +1017,28 @@ function openMonthPopup(year,monthIdx){
 function closeMonthModal(e){if(e.target===document.getElementById('month-modal'))document.getElementById('month-modal').classList.remove('open');}
 
 /* ── All Books ── */
+// ── Tag color palette (hash-based, consistent per name) ──
+const TAG_PALETTE=[
+  {bg:'rgba(110,144,114,0.18)',text:'#4a6b4e',border:'rgba(110,144,114,0.35)'},
+  {bg:'rgba(176,122,53,0.15)',text:'#8a5e22',border:'rgba(176,122,53,0.3)'},
+  {bg:'rgba(107,143,168,0.18)',text:'#355e78',border:'rgba(107,143,168,0.35)'},
+  {bg:'rgba(166,124,142,0.18)',text:'#7a4a5e',border:'rgba(166,124,142,0.35)'},
+  {bg:'rgba(143,168,92,0.18)',text:'#546828',border:'rgba(143,168,92,0.35)'},
+  {bg:'rgba(196,135,90,0.18)',text:'#894820',border:'rgba(196,135,90,0.35)'},
+  {bg:'rgba(144,118,168,0.18)',text:'#5e3e7a',border:'rgba(144,118,168,0.35)'},
+  {bg:'rgba(90,168,158,0.18)',text:'#1e6860',border:'rgba(90,168,158,0.35)'},
+];
+function getTagPalette(name){
+  let h=0;for(let c of name)h=(Math.imul(h,31)+c.charCodeAt(0))>>>0;
+  return TAG_PALETTE[h%TAG_PALETTE.length];
+}
 function setStatusFilter(val,btn){
   statusFilter=val;
   document.querySelectorAll('[data-filter]').forEach(el=>el.classList.toggle('active',el.dataset.filter===val));
   renderBooks();
 }
 function setTagFilter(val){tagFilter=tagFilter===val?null:val;renderBooks();}
+function setCatFilter(val){catFilter=catFilter===val?null:val;renderBooks();}
 
 function renderBooks(){
   const query=(document.getElementById('search-input')?.value||'').toLowerCase();
@@ -950,7 +1046,8 @@ function renderBooks(){
   let filtered=allBooks.slice();
 
   if(statusFilter!=='all')filtered=filtered.filter(b=>(b.status||'').toLowerCase()===statusFilter.toLowerCase());
-  if(tagFilter)filtered=filtered.filter(b=>b.tags.includes(tagFilter)||b.category.includes(tagFilter));
+  if(catFilter)filtered=filtered.filter(b=>b.category.includes(catFilter));
+  if(tagFilter)filtered=filtered.filter(b=>b.tags.includes(tagFilter));
   // FIX: ค้นหาครอบคลุม title, publisher, author, tag, category
   if(query)filtered=filtered.filter(b=>{
     const hay=[b.title,b.publisher,b.author,...b.tags,...b.category].join(' ').toLowerCase();
@@ -990,10 +1087,22 @@ function renderBooks(){
       </div>`;
     }).join('');
   }
-  const allTags=[...new Set(allBooks.flatMap(b=>[...b.tags,...b.category]))].sort();
-  document.getElementById('tag-filter-row').innerHTML=allTags.map(t=>
-    `<button class="filter-chip ${tagFilter===t?'active':''}" onclick="setTagFilter('${escHtml(t)}')">${escHtml(t)}</button>`
-  ).join('');
+  // Category filter row
+  const allCats=[...new Set(allBooks.flatMap(b=>b.category))].sort();
+  document.getElementById('cat-filter-row').innerHTML=
+    `<span class="filter-row-label">Category</span>`+
+    allCats.map(c=>`<button class="filter-chip ${catFilter===c?'active':''}" onclick="setCatFilter('${escHtml(c)}')">${escHtml(c)}</button>`).join('');
+  // Tag filter row (colorful pills with #)
+  const allTags=[...new Set(allBooks.flatMap(b=>b.tags))].sort();
+  document.getElementById('tag-filter-row').innerHTML=
+    `<span class="filter-row-label">Tags</span>`+
+    allTags.map(t=>{
+      const p=getTagPalette(t);
+      const isActive=tagFilter===t;
+      return`<button class="tag-chip${isActive?' active':''}"
+        style="background:${p.bg};color:${p.text};border-color:${p.border};"
+        onclick="setTagFilter('${escHtml(t)}')">#${escHtml(t)}</button>`;
+    }).join('');
   document.getElementById('books-sub').textContent=`${filtered.length} of ${allBooks.length} books`;
 }
 
