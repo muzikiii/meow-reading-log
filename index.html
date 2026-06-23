@@ -371,6 +371,36 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
   .book-hover{display:none;}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+/* ── Next Read ── */
+.nextread-section{margin-bottom:32px;}
+.nextread-section-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:14px;font-weight:600;}
+.roulette-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px 24px;box-shadow:var(--shadow);}
+.roulette-viewport{position:relative;display:flex;align-items:center;justify-content:center;gap:12px;margin:0 auto 22px;overflow:visible;}
+.roulette-card{width:100px;height:140px;border-radius:10px;background:var(--surface2);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);text-align:center;padding:8px;line-height:1.4;cursor:default;transition:all 0.12s;overflow:hidden;position:relative;flex-shrink:0;}
+.roulette-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.rc-title{position:absolute;bottom:0;left:0;right:0;z-index:1;padding:5px 4px;background:linear-gradient(transparent,rgba(0,0,0,0.55));color:#fff;font-size:9px;line-height:1.3;text-align:center;}
+.roulette-card.is-selected{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent2),var(--shadow-hover);transform:scale(1.1);z-index:2;}
+.roulette-card.dim-2{opacity:0.3;transform:scale(0.86);}
+.roulette-card.dim-1{opacity:0.6;transform:scale(0.93);}
+.roulette-selected-info{text-align:center;margin-bottom:20px;min-height:44px;}
+.roulette-selected-title{font-family:var(--font-display);font-size:19px;color:var(--text);margin-bottom:2px;transition:all 0.15s;}
+.roulette-selected-sub{font-size:12px;color:var(--text3);}
+.roulette-spin-btn{display:block;margin:0 auto;padding:10px 42px;background:var(--surface);border:1.5px solid var(--border2);border-radius:30px;font-family:var(--font-display);font-size:15px;color:var(--text);cursor:pointer;transition:all 0.15s;letter-spacing:0.02em;}
+.roulette-spin-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);box-shadow:var(--shadow-hover);}
+.roulette-spin-btn:disabled{opacity:0.45;cursor:not-allowed;}
+.roulette-empty{text-align:center;padding:40px;color:var(--text3);font-size:13px;}
+.smart-picks-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.smart-pick-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:box-shadow 0.15s,border-color 0.15s;}
+.smart-pick-card:hover{box-shadow:var(--shadow-hover);border-color:var(--border2);}
+.smart-pick-cover{width:52px;height:74px;border-radius:6px;background:var(--surface2);border:1px solid var(--border2);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--text3);text-align:center;padding:4px;line-height:1.3;}
+.smart-pick-cover img{width:100%;height:100%;object-fit:cover;}
+.smart-pick-info{flex:1;min-width:0;}
+.smart-pick-reason{font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;font-weight:600;}
+.smart-pick-title{font-family:var(--font-display);font-size:14px;color:var(--text);line-height:1.3;margin-bottom:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.smart-pick-sub{font-size:11px;color:var(--text3);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.smart-pick-tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;border:1px solid;}
+@media(max-width:900px){.smart-picks-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:640px){.smart-picks-grid{grid-template-columns:1fr;}.roulette-card{width:76px;height:108px;}.roulette-card.dim-2{display:none;}}
 </style>
 </head>
 <body>
@@ -385,6 +415,7 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
       <button class="nav-item active" onclick="showView('dashboard',this)"><span class="nav-icon">◈</span> Dashboard</button>
       <button class="nav-item" onclick="showView('books',this)"><span class="nav-icon">◫</span> All books <span class="nav-count" id="nav-count-books">—</span></button>
       <button class="nav-item" onclick="showView('wrapup',this)"><span class="nav-icon">◷</span> Monthly wrap-up</button>
+      <button class="nav-item" onclick="showView('nextread',this)"><span class="nav-icon">✦</span> Next Read</button>
     </div>
     <div class="nav-section" style="margin-top:8px">
       <div class="nav-label">Settings</div>
@@ -413,6 +444,9 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
       </button>
       <button class="mobile-nav-dd-item" id="mdd-wrapup" onclick="mobileNav('wrapup','Monthly wrap-up')">
         <span class="mobile-nav-dd-icon">◷</span> Monthly wrap-up
+      </button>
+      <button class="mobile-nav-dd-item" id="mdd-nextread" onclick="mobileNav('nextread','Next Read')">
+        <span class="mobile-nav-dd-icon">✦</span> Next Read
       </button>
       <div class="mobile-nav-dd-divider"></div>
       <button class="mobile-nav-dd-item" onclick="openGoalModal();closeMobileNav()">
@@ -517,6 +551,33 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
       <div id="wrapup-content"></div>
     </div>
 
+    <!-- Next Read -->
+    <div class="view" id="view-nextread">
+      <div class="page-header">
+        <div class="page-title">Next Read</div>
+        <div class="page-sub">หนังสือสุ่มจากกองดอง</div>
+      </div>
+
+      <!-- Roulette -->
+      <div class="nextread-section">
+        <div class="nextread-section-label">Random</div>
+        <div class="roulette-box">
+          <div id="roulette-strip" class="roulette-viewport"></div>
+          <div class="roulette-selected-info">
+            <div class="roulette-selected-title" id="roulette-title">—</div>
+            <div class="roulette-selected-sub" id="roulette-sub"></div>
+          </div>
+          <button class="roulette-spin-btn" id="roulette-spin-btn" onclick="spinRoulette()">Spin 🎲</button>
+        </div>
+      </div>
+
+      <!-- Smart Picks -->
+      <div class="nextread-section">
+        <div class="nextread-section-label">Smart Picks — Based on What You've Read</div>
+        <div class="smart-picks-grid" id="smart-picks-grid"></div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -619,6 +680,7 @@ function showView(id,btn){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('view-'+id).classList.add('active');
   if(btn)btn.classList.add('active');
+  if(id==='nextread')renderNextRead();
 }
 function toggleMobileNav(){
   const dd=document.getElementById('mobile-nav-dropdown');
@@ -638,6 +700,7 @@ function mobileNav(id,label){
   const t=document.getElementById('mdd-'+id);
   if(t)t.classList.add('active');
   closeMobileNav();
+  if(id==='nextread')renderNextRead();
 }
 document.addEventListener('click',function(e){
   if(!e.target.closest('#mobile-nav'))closeMobileNav();
@@ -715,6 +778,7 @@ function renderAll(){
   renderDashboard();
   renderBooks();
   renderWrapup();
+  renderNextRead();
 }
 
 /* ── img helpers ── */
@@ -1141,6 +1205,144 @@ function openBook(id){
 }
 function closeModal(e){if(e.target===document.getElementById('book-modal'))document.getElementById('book-modal').classList.remove('open');}
 function openNotion(){if(currentBook?.notionUrl)window.open(currentBook.notionUrl,'_blank');}
+
+/* ── Next Read ── */
+let rouletteBooks=[];
+let rouletteIdx=0;
+let rouletteSpinning=false;
+
+function getNotStarted(){
+  return allBooks.filter(b=>{
+    const s=(b.status||'').toLowerCase();
+    return s.includes('not')||s==='to-read'||s==='to read'||s==='unread';
+  });
+}
+
+function renderNextRead(){
+  rouletteBooks=getNotStarted();
+  if(rouletteBooks.length>0){
+    rouletteIdx=Math.floor(Math.random()*rouletteBooks.length);
+  }
+  updateRouletteStrip();
+  renderSmartPicks();
+}
+
+function updateRouletteStrip(){
+  const strip=document.getElementById('roulette-strip');
+  const infoTitle=document.getElementById('roulette-title');
+  const infoSub=document.getElementById('roulette-sub');
+  if(!strip)return;
+  if(rouletteBooks.length===0){
+    strip.innerHTML='<div class="roulette-empty">ไม่มีหนังสือในรายการ Not Started</div>';
+    if(infoTitle)infoTitle.textContent='—';
+    if(infoSub)infoSub.textContent='';
+    return;
+  }
+  const n=rouletteBooks.length;
+  // Show 5 cards: offsets -2 -1 0 +1 +2 (0 = selected)
+  const slots=[-2,-1,0,1,2];
+  strip.innerHTML=slots.map(o=>{
+    const i=((rouletteIdx+o)%n+n)%n;
+    const b=rouletteBooks[i];
+    const cls=o===0?'roulette-card is-selected':Math.abs(o)===2?'roulette-card dim-2':'roulette-card dim-1';
+    const imgHtml=b.image
+      ?`<img src="${escHtml(b.image)}" alt="" loading="lazy"><div class="rc-title">${escHtml(b.title.slice(0,22))}</div>`
+      :escHtml(b.title.slice(0,28));
+    return`<div class="${cls}">${imgHtml}</div>`;
+  }).join('');
+  const cur=rouletteBooks[rouletteIdx];
+  if(infoTitle)infoTitle.textContent=cur.title;
+  if(infoSub)infoSub.textContent=[cur.author,cur.publisher].filter(Boolean).join(' · ');
+}
+
+function spinRoulette(){
+  if(rouletteSpinning||rouletteBooks.length<2)return;
+  rouletteSpinning=true;
+  const btn=document.getElementById('roulette-spin-btn');
+  if(btn)btn.disabled=true;
+  const n=rouletteBooks.length;
+  const target=Math.floor(Math.random()*n);
+  const stepsToTarget=((target-rouletteIdx)%n+n)%n||n;
+  const loops=Math.ceil(Math.max(10,n)/n);
+  const totalSteps=stepsToTarget+loops*n;
+  let step=0;
+  function tick(){
+    rouletteIdx=(rouletteIdx+1)%n;
+    updateRouletteStrip();
+    step++;
+    if(step>=totalSteps){
+      rouletteSpinning=false;
+      if(btn)btn.disabled=false;
+      return;
+    }
+    const progress=step/totalSteps;
+    let delay=progress<0.4?55:progress<0.65?90:progress<0.8?140:progress<0.92?220:320;
+    setTimeout(tick,delay);
+  }
+  setTimeout(tick,55);
+}
+
+function shuffleArr(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+function renderSmartPicks(){
+  const grid=document.getElementById('smart-picks-grid');
+  if(!grid)return;
+  const done=allBooks.filter(b=>(b.status||'').toLowerCase()==='done');
+  const notStarted=getNotStarted();
+  if(notStarted.length===0){grid.innerHTML='<div class="empty-state">ไม่มีหนังสือใน Not Started</div>';return;}
+
+  const picks=[];
+
+  // 1. Fiction — random 1 from Not Started with category Fiction
+  const fictionPool=shuffleArr(notStarted.filter(b=>b.category.some(c=>c.toLowerCase()==='fiction')));
+  if(fictionPool.length>0)picks.push({book:fictionPool[0],reason:'Fiction',tag:null});
+
+  // 2. Non-Fiction — random 1 from Not Started with category Non-Fiction
+  const usedFictionId=picks[0]?.book.id;
+  const nonficPool=shuffleArr(notStarted.filter(b=>
+    b.category.some(c=>c.toLowerCase().replace('-','').replace(' ','')===('nonfiction'))&&b.id!==usedFictionId
+  ));
+  if(nonficPool.length>0)picks.push({book:nonficPool[0],reason:'Non-Fiction',tag:null});
+
+  // 3. Tag ที่ชอบ — find top tag from Done books, pick random Not Started with that tag
+  const usedIds=new Set(picks.map(p=>p.book.id));
+  let tagPick=null;
+  if(done.length>0){
+    const tagCount={};
+    done.forEach(b=>b.tags.forEach(t=>{tagCount[t]=(tagCount[t]||0)+1;}));
+    const rankedTags=Object.entries(tagCount).sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+    for(const t of rankedTags){
+      const cand=shuffleArr(notStarted.filter(b=>b.tags.includes(t)&&!usedIds.has(b.id)))[0];
+      if(cand){tagPick={book:cand,reason:'Tag ที่ชอบ',tag:t};break;}
+    }
+  }
+  if(!tagPick){
+    // fallback: random not-started not already picked
+    const fallback=shuffleArr(notStarted.filter(b=>!usedIds.has(b.id)))[0];
+    if(fallback)tagPick={book:fallback,reason:'Tag ที่ชอบ',tag:null};
+  }
+  if(tagPick)picks.push(tagPick);
+
+  grid.innerHTML=picks.map(({book:b,reason,tag})=>{
+    const coverHtml=b.image
+      ?`<img src="${escHtml(b.image)}" alt="" loading="lazy" onerror="this.style.display='none'">`
+      :escHtml(b.title.slice(0,18));
+    const tagHtml=tag?(()=>{const p=getTagPalette(tag);return`<span class="smart-pick-tag" style="background:${p.bg};color:${p.text};border-color:${p.border}">${escHtml(tag)}</span>`;})():'';
+    return`<div class="smart-pick-card" onclick="openBook('${escHtml(b.id)}')">
+      <div class="smart-pick-cover">${coverHtml}</div>
+      <div class="smart-pick-info">
+        <div class="smart-pick-reason">${escHtml(reason)}</div>
+        <div class="smart-pick-title" title="${escHtml(b.title)}">${escHtml(b.title)}</div>
+        <div class="smart-pick-sub">${escHtml([b.author,b.publisher].filter(Boolean).join(' · '))}</div>
+        ${tagHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
 
 /* ── Monthly wrap-up ── */
 function renderWrapup(){
