@@ -401,6 +401,18 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 .smart-pick-tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;border:1px solid;}
 @media(max-width:900px){.smart-picks-grid{grid-template-columns:1fr 1fr;}}
 @media(max-width:640px){.smart-picks-grid{grid-template-columns:1fr;}.roulette-card{width:76px;height:108px;}.roulette-card.dim-2{display:none;}}
+/* ── Mood Picks ── */
+.mood-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow);}
+.mood-chips-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.mood-chip{padding:7px 16px;border-radius:24px;border:1.5px solid var(--border2);background:none;color:var(--text2);font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.mood-chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent2);}
+.mood-chip.active{background:var(--accent2);border-color:var(--accent);color:var(--accent);font-weight:500;}
+.mood-input-wrap{position:relative;margin-bottom:16px;}
+.mood-text-input{width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Sarabun',sans-serif;font-size:13px;outline:none;transition:border-color 0.15s;}
+.mood-text-input:focus{border-color:var(--accent);}
+.mood-text-input::placeholder{color:var(--text3);}
+.mood-result-label{font-size:11px;color:var(--text3);margin-bottom:12px;letter-spacing:0.03em;}
+.mood-empty{text-align:center;padding:24px;color:var(--text3);font-size:13px;}
 </style>
 </head>
 <body>
@@ -568,6 +580,22 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
             <div class="roulette-selected-sub" id="roulette-sub"></div>
           </div>
           <button class="roulette-spin-btn" id="roulette-spin-btn" onclick="spinRoulette()">Spin 🎲</button>
+        </div>
+      </div>
+
+      <!-- Mood Picks -->
+      <div class="nextread-section">
+        <div class="nextread-section-label">ตอนนี้รู้สึกอย่างไร?</div>
+        <div class="mood-box">
+          <div class="mood-chips-row" id="mood-chips-row"></div>
+          <div class="mood-input-wrap">
+            <input class="mood-text-input" id="mood-text-input"
+              placeholder="หรือพิมพ์บอกอารมณ์ เช่น เครียด, อยากผ่อนคลาย, อยากได้ inspiration…, อยากฮีลใจ"
+              oninput="onMoodInput(this.value)">
+          </div>
+          <div id="mood-result-label" class="mood-result-label" style="display:none"></div>
+          <div class="smart-picks-grid" id="mood-picks-grid" style="display:none"></div>
+          <div id="mood-empty" class="mood-empty" style="display:none">ไม่พบหนังสือที่ตรงกับอารมณ์นี้ในกองดอง</div>
         </div>
       </div>
 
@@ -1224,6 +1252,7 @@ function renderNextRead(){
     rouletteIdx=Math.floor(Math.random()*rouletteBooks.length);
   }
   updateRouletteStrip();
+  renderMoodChips();
   renderSmartPicks();
 }
 
@@ -1375,6 +1404,99 @@ function renderSmartPicks(){
         <div class="smart-pick-title" title="${escHtml(b.title)}">${escHtml(b.title)}</div>
         <div class="smart-pick-sub">${escHtml([b.author,b.publisher].filter(Boolean).join(' · '))}</div>
         ${tagHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Mood Picks ── */
+const MOODS=[
+  {label:'😌 ผ่อนคลาย',    keywords:['fiction','bakery','food','travel','healing','romance','cozy','slice','literary']},
+  {label:'⚡ อยากได้แรงบันดาล', keywords:['non-fiction','nonfiction','productivity','creative','self-help','motivation','business','success','startup']},
+  {label:'📚 อยากได้ความรู้',  keywords:['non-fiction','nonfiction','history','science','finance','economics','psychology','education','research','technology']},
+  {label:'🤔 อยากคิด',      keywords:['philosophy','psychology','essay','classic','sociology','politics','non-fiction','nonfiction']},
+  {label:'🌙 เหงา',         keywords:['fiction','romance','slice','friendship','healing','literary','poetry']},
+  {label:'🌍 อยากผจญภัย',  keywords:['adventure','thriller','fantasy','mystery','sci-fi','scifi','fiction','horror','action']},
+];
+let activeMood=null;
+
+function renderMoodChips(){
+  const el=document.getElementById('mood-chips-row');
+  if(!el)return;
+  el.innerHTML=MOODS.map((m,i)=>
+    `<button class="mood-chip${activeMood===i?' active':''}" onclick="selectMood(${i})">${escHtml(m.label)}</button>`
+  ).join('');
+}
+
+function selectMood(idx){
+  activeMood=activeMood===idx?null:idx;
+  const inp=document.getElementById('mood-text-input');
+  if(inp)inp.value='';
+  renderMoodChips();
+  renderMoodPicks();
+}
+
+function onMoodInput(val){
+  activeMood=null;
+  renderMoodChips();
+  if(!val.trim()){hideMoodResults();return;}
+  renderMoodPicksByKeywords(val.toLowerCase().split(/[\s,，、]+/).filter(Boolean));
+}
+
+function hideMoodResults(){
+  document.getElementById('mood-picks-grid').style.display='none';
+  document.getElementById('mood-result-label').style.display='none';
+  document.getElementById('mood-empty').style.display='none';
+}
+
+function renderMoodPicks(){
+  if(activeMood===null){hideMoodResults();return;}
+  renderMoodPicksByKeywords(MOODS[activeMood].keywords);
+}
+
+function renderMoodPicksByKeywords(keywords){
+  const notStarted=getNotStarted();
+  const norm=s=>s.toLowerCase().replace(/[-\s]/g,'');
+  const scored=notStarted.map(b=>{
+    const haystack=[...b.category,...b.tags].map(norm);
+    let score=0;
+    keywords.forEach(kw=>{
+      const k=norm(kw);
+      haystack.forEach(h=>{if(h.includes(k)||k.includes(h))score++;});
+    });
+    return{book:b,score};
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+
+  const grid=document.getElementById('mood-picks-grid');
+  const label=document.getElementById('mood-result-label');
+  const empty=document.getElementById('mood-empty');
+
+  if(!scored.length){
+    grid.style.display='none';label.style.display='none';empty.style.display='block';return;
+  }
+  const picks=scored.slice(0,3);
+  empty.style.display='none';
+  label.style.display='block';
+  label.textContent=`พบ ${scored.length} เล่มที่ตรงกับอารมณ์นี้ · แสดง ${picks.length} เล่มแรก`;
+  grid.style.display='grid';
+  grid.innerHTML=picks.map(({book:b})=>{
+    const coverHtml=b.image
+      ?`<img src="${escHtml(b.image)}" alt="" loading="lazy" onerror="this.style.display='none'">`
+      :escHtml(b.title.slice(0,18));
+    const matchTags=[...b.category,...b.tags].filter(t=>
+      keywords.some(k=>{const nt=norm(t),nk=norm(k);return nt.includes(nk)||nk.includes(nt);})
+    ).slice(0,2);
+    const tagsHtml=matchTags.map(t=>{
+      const p=getTagPalette(t);
+      return`<span class="smart-pick-tag" style="background:${p.bg};color:${p.text};border-color:${p.border}">${escHtml(t)}</span>`;
+    }).join(' ');
+    return`<div class="smart-pick-card" onclick="openBook('${escHtml(b.id)}')">
+      <div class="smart-pick-cover">${coverHtml}</div>
+      <div class="smart-pick-info">
+        <div class="smart-pick-reason">🎯 ตรงกับอารมณ์คุณ</div>
+        <div class="smart-pick-title" title="${escHtml(b.title)}">${escHtml(b.title)}</div>
+        <div class="smart-pick-sub">${escHtml([b.author,b.publisher].filter(Boolean).join(' · '))}</div>
+        ${tagsHtml}
       </div>
     </div>`;
   }).join('');
