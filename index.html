@@ -401,16 +401,18 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 .smart-pick-tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;border:1px solid;}
 @media(max-width:900px){.smart-picks-grid{grid-template-columns:1fr 1fr;}}
 @media(max-width:640px){.smart-picks-grid{grid-template-columns:1fr;}.roulette-card{width:76px;height:108px;}.roulette-card.dim-2{display:none;}}
+/* ── Wrapup month tracking ── */
+.wrapup-tracking-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px;}
+.wrapup-pub-badges{display:flex;flex-wrap:wrap;gap:8px;}
+.wrapup-pub-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;background:var(--surface2);border:1px solid var(--border2);font-size:12px;color:var(--text2);}
+.wrapup-pub-badge-count{font-size:11px;font-weight:600;color:var(--accent);background:var(--accent2);padding:1px 7px;border-radius:10px;}
+@media(max-width:760px){.wrapup-tracking-row{grid-template-columns:1fr;}}
 /* ── Mood Picks ── */
 .mood-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow);}
 .mood-chips-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
 .mood-chip{padding:7px 16px;border-radius:24px;border:1.5px solid var(--border2);background:none;color:var(--text2);font-size:13px;font-family:'Sarabun',sans-serif;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
 .mood-chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent2);}
 .mood-chip.active{background:var(--accent2);border-color:var(--accent);color:var(--accent);font-weight:500;}
-.mood-input-wrap{position:relative;margin-bottom:16px;}
-.mood-text-input{width:100%;background:var(--surface2);border:1.5px solid var(--border2);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Sarabun',sans-serif;font-size:13px;outline:none;transition:border-color 0.15s;}
-.mood-text-input:focus{border-color:var(--accent);}
-.mood-text-input::placeholder{color:var(--text3);}
 .mood-result-label{font-size:11px;color:var(--text3);margin-bottom:12px;letter-spacing:0.03em;}
 .mood-empty{text-align:center;padding:24px;color:var(--text3);font-size:13px;}
 </style>
@@ -499,6 +501,7 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
           <div class="goal-info-full">
             <div class="goal-title-full">Reading Goal <span id="goal-year-label"></span></div>
             <div class="goal-count-full"><span id="goal-current">0</span> / <span id="goal-target">—</span> books</div>
+            <div id="goal-days-left" style="font-size:12px;color:var(--text3);margin-top:2px;margin-bottom:2px;"></div>
             <div class="goal-edit-full">tap to edit goal</div>
           </div>
         </div>
@@ -588,11 +591,7 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
         <div class="nextread-section-label">ตอนนี้รู้สึกอย่างไร?</div>
         <div class="mood-box">
           <div class="mood-chips-row" id="mood-chips-row"></div>
-          <div class="mood-input-wrap">
-            <input class="mood-text-input" id="mood-text-input"
-              placeholder="หรือพิมพ์บอกอารมณ์ เช่น เครียด, อยากผ่อนคลาย, อยากได้ inspiration…, อยากฮีลใจ"
-              oninput="onMoodInput(this.value)">
-          </div>
+
           <div id="mood-result-label" class="mood-result-label" style="display:none"></div>
           <div class="smart-picks-grid" id="mood-picks-grid" style="display:none"></div>
           <div id="mood-empty" class="mood-empty" style="display:none">ไม่พบหนังสือที่ตรงกับอารมณ์นี้ในกองดอง</div>
@@ -923,6 +922,13 @@ function renderGoal(current){
   if(yl)yl.textContent=new Date().getFullYear();
   const badge=document.getElementById('nav-goal-badge');
   if(badge)badge.textContent=current+'/'+readingGoal;
+  const daysEl=document.getElementById('goal-days-left');
+  if(daysEl){
+    const now=new Date();
+    const endOfYear=new Date(now.getFullYear(),11,31);
+    const daysLeft=Math.ceil((endOfYear-now)/(1000*60*60*24));
+    daysEl.textContent=`${daysLeft} days left in ${now.getFullYear()}`;
+  }
 }
 
 function openGoalModal(){
@@ -1411,12 +1417,13 @@ function renderSmartPicks(){
 
 /* ── Mood Picks ── */
 const MOODS=[
-  {label:'😌 ผ่อนคลาย',    keywords:['fiction','bakery','food','travel','healing','romance','cozy','slice','literary']},
-  {label:'⚡ อยากได้แรงบันดาล', keywords:['non-fiction','nonfiction','productivity','creative','self-help','motivation','business','success','startup']},
-  {label:'📚 อยากได้ความรู้',  keywords:['non-fiction','nonfiction','history','science','finance','economics','psychology','education','research','technology']},
-  {label:'🤔 อยากคิด',      keywords:['philosophy','psychology','essay','classic','sociology','politics','non-fiction','nonfiction']},
-  {label:'🌙 เหงา',         keywords:['fiction','romance','slice','friendship','healing','literary','poetry']},
-  {label:'🌍 อยากผจญภัย',  keywords:['adventure','thriller','fantasy','mystery','sci-fi','scifi','fiction','horror','action']},
+  {label:'😌 ผ่อนคลาย',       keywords:['bakery','cafe','food','hotel','soul','life','shop','bookstore','shop']},
+  {label:'⚡ แรงบันดาลใจ',       keywords:['productivity','manifest','successor','idea','work','experience']},
+  {label:'📚 อยากเรียนรู้',    keywords:['learn','history','finance','experience','idea','art','life','work']},
+  {label:'🤔 อยากคิด',        keywords:['idea','art','philosophy','manifest']},
+  {label:'🌙 เหงา',           keywords:['self love','life','family']},
+  {label:'🌍 ตื่นเต้น',         keywords:['fantasy','thriller','mystery']},
+  {label:'🍜 หิว',            keywords:['food','bakery','cafe','shop']},
 ];
 let activeMood=null;
 
@@ -1429,19 +1436,11 @@ function renderMoodChips(){
 }
 
 function selectMood(idx){
-  activeMood=activeMood===idx?null:idx;
-  const inp=document.getElementById('mood-text-input');
-  if(inp)inp.value='';
+  activeMood=idx;
   renderMoodChips();
   renderMoodPicks();
 }
 
-function onMoodInput(val){
-  activeMood=null;
-  renderMoodChips();
-  if(!val.trim()){hideMoodResults();return;}
-  renderMoodPicksByKeywords(val.toLowerCase().split(/[\s,，、]+/).filter(Boolean));
-}
 
 function hideMoodResults(){
   document.getElementById('mood-picks-grid').style.display='none';
@@ -1458,7 +1457,7 @@ function renderMoodPicksByKeywords(keywords){
   const notStarted=getNotStarted();
   const norm=s=>s.toLowerCase().replace(/[-\s]/g,'');
   const scored=notStarted.map(b=>{
-    const haystack=[...b.category,...b.tags].map(norm);
+    const haystack=[...b.category,...b.tags, b.title].map(norm);
     let score=0;
     keywords.forEach(kw=>{
       const k=norm(kw);
@@ -1467,17 +1466,27 @@ function renderMoodPicksByKeywords(keywords){
     return{book:b,score};
   }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
 
+  // shuffle within same-score tiers → กดซ้ำได้ผลต่างออกไป
+  const shuffled=[];
+  let i=0;
+  while(i<scored.length){
+    let j=i;
+    while(j<scored.length&&scored[j].score===scored[i].score)j++;
+    shuffleArr(scored.slice(i,j)).forEach(x=>shuffled.push(x));
+    i=j;
+  }
+
   const grid=document.getElementById('mood-picks-grid');
   const label=document.getElementById('mood-result-label');
   const empty=document.getElementById('mood-empty');
 
-  if(!scored.length){
+  if(!shuffled.length){
     grid.style.display='none';label.style.display='none';empty.style.display='block';return;
   }
-  const picks=scored.slice(0,3);
+  const picks=shuffled.slice(0,3);
   empty.style.display='none';
   label.style.display='block';
-  label.textContent=`พบ ${scored.length} เล่มที่ตรงกับอารมณ์นี้ · แสดง ${picks.length} เล่มแรก`;
+  label.textContent=`พบ ${shuffled.length} เล่มที่ตรงกับอารมณ์นี้ · แสดง ${picks.length} เล่มแรก`;
   grid.style.display='grid';
   grid.innerHTML=picks.map(({book:b})=>{
     const coverHtml=b.image
@@ -1529,11 +1538,52 @@ function renderWrapup(){
   // ── Calendar grid (navigable) ──
   html+=renderCalendarGrid(done);
 
-  // ── Book table for the month currently shown in calendar ──
+  // ── Month data ──
   const monthKey=`${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}`;
   const monthBooks=done.filter(b=>b.completed.startsWith(monthKey))
     .sort((a,b)=>(a.completed||'').localeCompare(b.completed||''));
   const monthLabel=new Date(calViewYear,calViewMonth,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+
+  // ── By Category ──
+  const catCounts={};
+  monthBooks.forEach(b=>(b.category||[]).forEach(c=>{if(c)catCounts[c]=(catCounts[c]||0)+1;}));
+  const catData=Object.entries(catCounts).sort((a,b)=>b[1]-a[1]);
+  const catMax=catData[0]?catData[0][1]:1;
+  const catBarsHtml=catData.length
+    ?catData.map(([label,count])=>`
+      <div class="mbar-row" style="cursor:default;">
+        <span class="mbar-label" style="width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(label)}">${escHtml(label)}</span>
+        <div class="mbar-track">
+          <div class="mbar-fill" style="width:${(count/catMax*100).toFixed(1)}%;background:${getCatColor(label)};border-radius:4px;"></div>
+        </div>
+        <span class="mbar-count">${count} เล่ม</span>
+      </div>`).join('')
+    :`<div style="color:var(--text3);font-size:12px;padding:4px 0">ไม่มีข้อมูล category</div>`;
+
+  // ── Publisher badges ──
+  const pubCounts={};
+  monthBooks.forEach(b=>{if(b.publisher)pubCounts[b.publisher]=(pubCounts[b.publisher]||0)+1;});
+  const pubData=Object.entries(pubCounts).sort((a,b)=>b[1]-a[1]);
+  const pubBadgesHtml=pubData.length
+    ?pubData.map(([name,count])=>`
+      <span class="wrapup-pub-badge">
+        ${escHtml(name)}
+        ${count>1?`<span class="wrapup-pub-badge-count">${count}</span>`:''}
+      </span>`).join('')
+    :`<span style="color:var(--text3);font-size:12px">ไม่มีข้อมูลสำนักพิมพ์</span>`;
+
+  html+=`<div class="wrapup-tracking-row">
+    <div class="chart-card">
+      <div class="section-title" style="margin-bottom:12px">By category</div>
+      ${catBarsHtml}
+    </div>
+    <div class="chart-card">
+      <div class="section-title" style="margin-bottom:12px">Publishing</div>
+      <div class="wrapup-pub-badges">${pubBadgesHtml}</div>
+    </div>
+  </div>`;
+
+  // ── Book table for the month currently shown in calendar ──
   let tableRows='';
   if(monthBooks.length){
     tableRows=monthBooks.map(b=>`
@@ -1552,7 +1602,7 @@ function renderWrapup(){
     tableRows='<div style="color:var(--text3);font-size:13px;padding:8px 0">ไม่มีหนังสือที่อ่านจบในเดือนนี้</div>';
   }
   html+=`<div class="chart-card" style="margin-top:20px">
-    <div class="section-title" style="margin-bottom:14px">หนังสือที่อ่านจบ — ${monthLabel}</div>
+    <div class="section-title" style="margin-bottom:14px">Reading Wrap-up : ${monthLabel}</div>
     <div class="bk-table">
       <div class="bk-table-head">
         <div></div>
