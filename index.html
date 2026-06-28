@@ -1730,9 +1730,26 @@ async function exportCard(){
         s.onload=res;s.onerror=rej;document.head.appendChild(s);
       });
     }
-    const card=buildExportCard();
+    // Pre-fetch book cover images as base64 to bypass CORS in html2canvas
+    const now2=new Date();
+    const year2=calViewYear||now2.getFullYear();
+    const month2=calViewMonth!==null?calViewMonth:now2.getMonth();
+    const monthKey2=`${year2}-${String(month2+1).padStart(2,'0')}`;
+    const done2=allBooks.filter(b=>b.status==='Done'&&b.completed);
+    const monthBooks2=done2.filter(b=>b.completed.startsWith(monthKey2));
+    const imgUrls=[...new Set(monthBooks2.map(b=>b.image).filter(Boolean))];
+    const imgCache={};
+    await Promise.all(imgUrls.map(url=>
+      fetch(url).then(r=>r.blob()).then(blob=>new Promise(res=>{
+        const fr=new FileReader();
+        fr.onload=e=>{imgCache[url]=e.target.result;res();};
+        fr.onerror=()=>res();
+        fr.readAsDataURL(blob);
+      })).catch(()=>{})
+    ));
+    const card=buildExportCard(imgCache);
     document.body.appendChild(card);
-    await new Promise(r=>setTimeout(r,200)); // wait for images
+    await new Promise(r=>setTimeout(r,200)); // wait for render
     const canvas=await html2canvas(card,{
       scale:2,useCORS:true,allowTaint:false,
       backgroundColor:'#fbfaf6',width:540,height:675,logging:false
@@ -1751,7 +1768,7 @@ async function exportCard(){
   }
 }
 
-function buildExportCard(){
+function buildExportCard(imgCache={}){
   const now=new Date();
   const year=calViewYear||now.getFullYear();
   const month=calViewMonth!==null?calViewMonth:now.getMonth();
@@ -1804,7 +1821,7 @@ function buildExportCard(){
     if(hasBook){
       if(b&&b.image){
         calCells+=`<div style="width:${COVER_W}px;height:${COVER_H}px;border-radius:2px;overflow:hidden;flex-shrink:0;">`
-          +`<img src="${b.image}" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.background='#ccc9bc'">`
+          +`<img src="${imgCache[b.image]||b.image}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.background='#ccc9bc'">`
           +`</div>`;
       } else {
         calCells+=`<div style="width:${COVER_W}px;height:${COVER_H}px;background:#ccc9bc;border-radius:2px;"></div>`;
@@ -1829,8 +1846,8 @@ function buildExportCard(){
   // Publisher badges
   const pubHtml=pubData.length
     ?pubData.map(([name,cnt])=>
-      `<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:12px;background:#f3f1ea;border:1px solid rgba(70,80,60,0.1);font-size:7px;color:#5d6555;margin:2px 2px 0 0;">`
-      +name+(cnt>1?`<b style="background:rgba(91,122,95,0.18);color:#5b7a5f;font-size:6px;padding:1px 4px;border-radius:6px;font-weight:600;">${cnt}</b>`:'')
+      `<span style="display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:12px;background:#f3f1ea;border:1px solid rgba(70,80,60,0.1);font-size:7px;color:#5d6555;margin:2px 2px 0 0;text-align:center;">`
+      +name
       +`</span>`
     ).join('')
     :`<span style="font-size:10px;color:#9aa092;">No data</span>`;
@@ -1860,8 +1877,8 @@ function buildExportCard(){
       +`<div style="font-size:7px;letter-spacing:0.08em;text-transform:uppercase;color:#9aa092;">Reading Goal</div>`
       +`<div style="position:relative;width:44px;height:44px;flex-shrink:0;">`
       +`<svg width="44" height="44" viewBox="0 0 48 48" style="display:block;transform:rotate(-90deg)">`
-      +`<circle cx="24" cy="24" r="${R}" fill="none" stroke="#e9e6dc" stroke-width="5"/>`
-      +`<circle cx="24" cy="24" r="${R}" fill="none" stroke="#b07a35" stroke-width="5" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${goalOffset}"/>`
+      +`<circle cx="24" cy="24" r="${R}" fill="transparent" stroke="#e9e6dc" stroke-width="5"/>`
+      +`<circle cx="24" cy="24" r="${R}" fill="transparent" stroke="#b07a35" stroke-width="5" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${goalOffset}"/>`
       +`</svg>`
       +`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#b07a35;">${goalPct}%</div></div>`
       +`<div style="font-family:Fraunces,Georgia,serif;font-size:13px;color:#23291f;line-height:1;">${yearDone} / ${readingGoal}</div>`
