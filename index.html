@@ -435,8 +435,8 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
     <div class="nav-section" style="margin-top:8px">
       <div class="nav-label">Settings</div>
       <button class="nav-item" onclick="openGoalModal()"><span class="nav-icon">◎</span> Reading Goal <span class="nav-count" id="nav-goal-badge">—</span></button>
-      <button class="nav-item" id="export-btn" onclick="exportCard()"><span class="nav-icon">⊡</span> Export Reading Wrapup</button>
-        <button class="nav-item" id="export-svg-btn" onclick="exportSVG()"><span class="nav-icon">⬡</span> Export SVG (Canva)</button>
+      <button class="nav-item" id="export-btn" onclick="exportSlide1()"><span class="nav-icon">⊡</span> Export Slide 1 — Overview</button>
+      <button class="nav-item" id="export-btn2" onclick="exportSlide2()"><span class="nav-icon">⊟</span> Export Slide 2 — Books</button>
     </div>
     <div class="sidebar-footer">
       <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn"><span id="theme-icon">☾</span> <span id="theme-label">Dark mode</span></button>
@@ -1750,449 +1750,207 @@ function toggleTheme(){
   applyTheme(next);
 }
 
-/* ── Export Card ── */
-async function exportCard(){
-  const btn=document.getElementById('export-btn');
-  if(btn){btn.textContent='⏳ Capturing…';btn.disabled=true;}
-  try{
-    if(!window.html2canvas){
-      await new Promise((res,rej)=>{
-        const s=document.createElement('script');
-        s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-        s.onload=res;s.onerror=rej;document.head.appendChild(s);
-      });
-    }
-
-    // Pre-fetch book cover images as base64 to bypass CORS
-    const done2=allBooks.filter(b=>b.status==='Done'&&b.completed);
-    const monthKey2=`${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}`;
-    const monthBooks2=done2.filter(b=>b.completed.startsWith(monthKey2));
-    const imgUrls=[...new Set(monthBooks2.map(b=>b.image).filter(Boolean))];
-    const imgCache={};
-    await Promise.all(imgUrls.map(url=>
-      fetch(url).then(r=>r.blob()).then(blob=>new Promise(res=>{
-        const fr=new FileReader();
-        fr.onload=e=>{imgCache[url]=e.target.result;res();};
-        fr.onerror=()=>res();
-        fr.readAsDataURL(blob);
-      })).catch(()=>{})
-    ));
-
-    // Get theme
-    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
-    const bgColor=isDark?'#1a201a':'#fbfaf6';
-
-    // Clone wrapup-content into a 1080px off-screen container
-    const src=document.getElementById('wrapup-content');
-    const clone=src.cloneNode(true);
-
-    // Replace image srcs with cached base64
-    clone.querySelectorAll('img').forEach(img=>{
-      const orig=img.getAttribute('src');
-      if(orig&&imgCache[orig])img.src=imgCache[orig];
+/* ── Export (shared setup) ── */
+async function _exportSetup(){
+  if(!window.html2canvas){
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      s.onload=res;s.onerror=rej;document.head.appendChild(s);
     });
+  }
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const bg=isDark?'#1a201a':'#fbfaf6',surf=isDark?'#222a21':'#ffffff',surf2=isDark?'#2a332a':'#f3f1ea';
+  const bdr=isDark?'rgba(170,190,160,0.10)':'rgba(70,80,60,0.10)',bdr2=isDark?'rgba(170,190,160,0.16)':'rgba(70,80,60,0.16)';
+  const tx=isDark?'#eef2ea':'#23291f',tx2=isDark?'#aeb6a6':'#5d6555',tx3=isDark?'#7c8576':'#9aa092';
+  const accent=isDark?'#94ad72':'#5b7a5f',brick=isDark?'#e0a85c':'#b07a35';
 
-    // Resolve theme colours (fixes CSS-variable rendering in html2canvas)
-    const surfaceColor=isDark?'#222a21':'#ffffff';
-    const borderColor=isDark?'rgba(170,190,160,0.16)':'rgba(70,80,60,0.16)';
-    const textColor=isDark?'#eef2ea':'#23291f';
-    const text2Color=isDark?'#aeb6a6':'#5d6555';
-    const text3Color=isDark?'#7c8576':'#9aa092';
+  const done=allBooks.filter(b=>b.status==='Done'&&b.completed);
+  const mk=`${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}`;
+  const monthBooks=done.filter(b=>b.completed.startsWith(mk));
+  const readingBooks=allBooks.filter(b=>b.status==='Reading').slice(0,3);
+  const mName=new Date(calViewYear,calViewMonth,1).toLocaleDateString('en-GB',{month:'long'});
+  const mUpper=mName.toUpperCase(),mFile=mName.toLowerCase();
 
-    // Inline chart-card backgrounds so html2canvas renders them correctly
-    clone.querySelectorAll('.chart-card').forEach(el=>{
-      el.style.background=surfaceColor;
-      el.style.border=`1px solid ${borderColor}`;
-      el.style.boxShadow='none';
-    });
-    clone.querySelectorAll('.smart-pick-card').forEach(el=>{
-      el.style.background=surfaceColor;
-      el.style.border=`1px solid ${borderColor}`;
-      el.style.boxShadow='none';
-    });
+  const imgCache={};
+  await Promise.all([...new Set([...monthBooks,...readingBooks].map(b=>b.image).filter(Boolean))].map(url=>
+    fetch(url).then(r=>r.blob()).then(blob=>new Promise(res=>{
+      const fr=new FileReader();fr.onload=e=>{imgCache[url]=e.target.result;res();};fr.onerror=()=>res();fr.readAsDataURL(blob);
+    })).catch(()=>{})
+  ));
 
-    // Force grids to 3-col
-    clone.querySelectorAll('.wrapup-tracking-row').forEach(el=>el.style.gridTemplateColumns='1fr 1fr 1fr');
-    clone.querySelectorAll('.smart-picks-grid').forEach(el=>el.style.gridTemplateColumns='repeat(3,1fr)');
+  const yearDone=done.filter(b=>b.completed?.startsWith(calViewYear.toString())).length;
+  const goalPct=Math.min(100,Math.round(yearDone/readingGoal*100));
+  const GR=28,Gc=+(2*Math.PI*GR).toFixed(2),Go=+(Gc*(1-goalPct/100)).toFixed(2);
+  const catCounts={};monthBooks.forEach(b=>(b.category||[]).forEach(c=>{if(c)catCounts[c]=(catCounts[c]||0)+1;}));
+  const catData=Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const catMax=catData[0]?catData[0][1]:1;
+  const pubCounts={};monthBooks.forEach(b=>{if(b.publisher)pubCounts[b.publisher]=(pubCounts[b.publisher]||0)+1;});
+  const pubData=Object.entries(pubCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const daysInMonth=new Date(calViewYear,calViewMonth+1,0).getDate();
+  const firstDay=new Date(calViewYear,calViewMonth,1).getDay();
+  const dayMap={};monthBooks.forEach(b=>{const d=parseInt(b.completed.slice(8,10));if(!dayMap[d])dayMap[d]=[];dayMap[d].push(b);});
 
-    // Footer signature
-    const footer=document.createElement('div');
-    footer.style.cssText=`text-align:center;margin-top:28px;padding-top:0;`;
-    footer.innerHTML=`<span style="font-size:10px;letter-spacing:0.22em;color:${text3Color};font-family:'Sarabun',sans-serif;text-transform:uppercase;">Pawi's Diary</span>`;
-
-    const wrap=document.createElement('div');
-    // 800px wide = smaller calendar cells, tighter layout
-    wrap.style.cssText=`position:fixed;left:-9999px;top:0;z-index:-1;width:800px;padding:48px 56px 52px;box-sizing:border-box;background:${bgColor};color:${textColor};`;
-    if(isDark)wrap.setAttribute('data-theme','dark');
-    wrap.appendChild(clone);
-    wrap.appendChild(footer);
-    document.body.appendChild(wrap);
-
+  const coverImg=(b,w,h,r=4)=>{
+    const src=b.image?(imgCache[b.image]||b.image):'';
+    return src?`<img src="${src}" style="width:${w}px;height:${h}px;object-fit:cover;display:block;border-radius:${r}px;">`
+      :`<div style="width:${w}px;height:${h}px;background:${surf2};border-radius:${r}px;display:flex;align-items:center;justify-content:center;font-size:7px;color:${tx3};text-align:center;padding:2px;line-height:1.2;">${escHtml((b.title||'').slice(0,14))}</div>`;
+  };
+  const coverFull=(b,h=130,r=6)=>{
+    const src=b.image?(imgCache[b.image]||b.image):'';
+    return src?`<img src="${src}" style="width:100%;height:${h}px;object-fit:cover;display:block;border-radius:${r}px;">`
+      :`<div style="width:100%;height:${h}px;background:${surf2};border-radius:${r}px;display:flex;align-items:center;justify-content:center;font-size:8px;color:${tx3};text-align:center;padding:4px;line-height:1.3;">${escHtml((b.title||'').slice(0,20))}</div>`;
+  };
+  const lbl=(t)=>`<div style="font-size:9px;letter-spacing:0.10em;text-transform:uppercase;color:${tx3};margin-bottom:8px;font-family:'Sarabun',sans-serif;">${t}</div>`;
+  const card=(html,extra='')=>`<div style="background:${surf};border:1px solid ${bdr2};border-radius:14px;padding:16px;box-sizing:border-box;${extra}">${html}</div>`;
+  const sLabel=(t)=>`<div style="font-size:9px;letter-spacing:0.10em;text-transform:uppercase;color:${tx3};margin-bottom:8px;margin-top:14px;font-family:'Sarabun',sans-serif;">${t}</div>`;
+  const hero=(count,small=false,showCount=true)=>`
+    <div style="text-align:center;margin-bottom:40px;">
+      <div style="font-size:36px;letter-spacing:0.12em;color:#463b36;margin-bottom:6px;font-family:'Sarabun',sans-serif;font-weight:600;">READING WRAP-UP</div>
+      <div style="font-family:'Fraunces',Georgia,serif;font-size:80px;font-weight:700;color:${accent};line-height:1;letter-spacing:-2px;">${mUpper}</div>
+      <div style="font-size:20px;color:${tx3};margin-top:6px;font-family:'Sarabun',sans-serif;letter-spacing:0.06em;">${calViewYear}</div>
+      ${showCount?`<div style="font-size:12px;color:${tx3};margin-top:4px;font-family:'Sarabun',sans-serif;">${count} Books</div>`:''}
+    </div>`;
+  const makeWrap=(html)=>{
+    const d=document.createElement('div');
+    d.style.cssText=`position:fixed;left:-9999px;top:0;z-index:-1;width:800px;padding:36px 52px 44px;box-sizing:border-box;background:${bg};font-family:'Sarabun',sans-serif;`;
+    d.innerHTML=html;return d;
+  };
+  // Capture → 1080×1350; footer drawn at fixed bottom via canvas API
+  const snap=async(el)=>{
+    document.body.appendChild(el);
     await document.fonts.ready;
-    await new Promise(r=>setTimeout(r,300));
-
-    const captured=await html2canvas(wrap,{
-      scale:1.35,useCORS:true,allowTaint:false,
-      backgroundColor:bgColor,logging:false
-    });
-    document.body.removeChild(wrap);
-
-    // Output: 1080px wide (800 * 1.35 ≈ 1080), full natural height
-    const W=captured.width;
-    const H=captured.height;
-    const out=document.createElement('canvas');
-    out.width=W; out.height=H;
+    await new Promise(r=>setTimeout(r,280));
+    const raw=await html2canvas(el,{scale:1.35,useCORS:true,allowTaint:false,backgroundColor:bg,logging:false});
+    document.body.removeChild(el);
+    const W=1080,H=1350,out=document.createElement('canvas');
+    out.width=W;out.height=H;
     const ctx=out.getContext('2d');
-    ctx.fillStyle=bgColor;
-    ctx.fillRect(0,0,W,H);
-    ctx.drawImage(captured,0,0);
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    ctx.drawImage(raw,0,0);
+    ctx.fillStyle=tx3;
+    ctx.font='11px Sarabun,sans-serif';
+    if('letterSpacing' in ctx)ctx.letterSpacing='3px';
+    ctx.textAlign='center';
+    ctx.fillText("PAWI'S DIARY",W/2,H-36);
+    return out;
+  };
+  const dl=(canvas,name)=>{const a=document.createElement('a');a.download=name;a.href=canvas.toDataURL('image/png');a.click();};
 
-    const monthName=new Date(calViewYear,calViewMonth,1).toLocaleDateString('en-GB',{month:'long'}).toLowerCase();
-    const a=document.createElement('a');
-    a.download=`reading-wrapup-${monthName}-${calViewYear}.png`;
-    a.href=out.toDataURL('image/png');
-    a.click();
+  return{bg,surf,surf2,bdr,bdr2,tx,tx2,tx3,accent,brick,
+         done,mk,monthBooks,readingBooks,mName,mUpper,mFile,
+         imgCache,yearDone,goalPct,GR,Gc,Go,catData,catMax,pubData,
+         daysInMonth,firstDay,dayMap,
+         coverImg,coverFull,lbl,card,sLabel,hero,makeWrap,snap,dl};
+}
+
+/* ── Export Slide 1 : Overview ── */
+async function exportSlide1(){
+  const btn=document.getElementById('export-btn');
+  if(btn){btn.innerHTML='⏳ Exporting…';btn.disabled=true;}
+  try{
+    const E=await _exportSetup();
+    const {bg,surf,surf2,bdr,bdr2,tx,tx2,tx3,
+           monthBooks,mFile,imgCache,daysInMonth,firstDay,dayMap,
+           coverImg,hero,makeWrap,snap,dl}=E;
+
+    let calCells='';
+    for(let i=0;i<firstDay;i++)calCells+=`<div></div>`;
+    for(let d=1;d<=daysInMonth;d++){
+      const bks=dayMap[d]||[];const b=bks[0];const has=bks.length>0;
+      calCells+=`<div style="background:${has?surf2:surf};border:1px solid ${bdr};border-radius:6px;padding:3px;box-sizing:border-box;overflow:hidden;min-height:50px;"><div style="font-size:7px;color:${has?tx2:tx3};line-height:1;margin-bottom:2px;">${d}</div>${has?coverImg(b,20,30,2):''}</div>`;
+    }
+    const rem=(firstDay+daysInMonth)%7;if(rem)for(let i=0;i<7-rem;i++)calCells+=`<div></div>`;
+
+    // Reading section (Overview style — compact cards)
+    const {readingBooks}=E;
+    const readingCard1=(b)=>{
+      const src=b.image?(imgCache[b.image]||b.image):'';
+      const cover=src
+        ?`<img src="${src}" style="width:100%;height:135px;object-fit:cover;display:block;border-radius:6px;">`
+        :`<div style="width:100%;height:135px;background:${surf2};border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:8px;color:${tx3};text-align:center;padding:4px;box-sizing:border-box;border:1px solid ${bdr};">${escHtml((b.title||'').slice(0,20))}</div>`;
+      return`<div style="width:90px;flex-shrink:0;">${cover}<div style="font-size:11px;color:${tx};line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-family:'Sarabun',sans-serif;margin-top:6px;">${escHtml(b.title)}</div><div style="font-size:10px;color:${tx3};margin-top:2px;font-family:'Sarabun',sans-serif;">${escHtml(b.publisher||b.author||'')}</div></div>`;
+    };
+    const readingSec1=readingBooks.length
+      ? `<div style="margin-top:40px;">`+E.sLabel('อ่านค้างอยู่ (Reading)')
+        +`<div style="display:flex;flex-direction:row;gap:14px;">${readingBooks.map(b=>readingCard1(b)).join('')}</div></div>`
+      :'';
+
+    const slide1=
+      hero(monthBooks.length, false, false)
+      +`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px;">${['SUN','MON','TUE','WED','THU','FRI','SAT'].map(d=>`<div style="text-align:center;font-size:8px;color:${tx3};letter-spacing:0.06em;padding:3px 0;">${d}</div>`).join('')}</div>`
+      +`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:18px;">${calCells}</div>`
+      +readingSec1;
+
+    const c1=await snap(makeWrap(slide1));
+    dl(c1,`wrapup-1-overview-${mFile}-${calViewYear}.png`);
+
   }catch(e){
     alert('Export failed: '+e.message);
   }finally{
-    if(btn){btn.innerHTML='<span class="nav-icon">⊡</span> Export Reading Wrapup';btn.disabled=false;}
+    if(btn){btn.innerHTML='<span class="nav-icon">⊡</span> Export Slide 1 — Overview';btn.disabled=false;}
   }
 }
 
-function buildExportCard(imgCache={}){
-  const now=new Date();
-  const year=calViewYear||now.getFullYear();
-  const month=calViewMonth!==null?calViewMonth:now.getMonth();
-  const monthKey=`${year}-${String(month+1).padStart(2,'0')}`;
-  const monthName=new Date(year,month,1).toLocaleDateString('en-GB',{month:'long'}).toUpperCase();
-
-  const done=allBooks.filter(b=>b.status==='Done'&&b.completed);
-  const monthBooks=done.filter(b=>b.completed.startsWith(monthKey));
-
-  // Goal
-  const yearDone=done.filter(b=>b.completed?.startsWith(year.toString())).length;
-  const goalPct=Math.min(100,Math.round(yearDone/readingGoal*100));
-  const daysLeft=Math.max(0,Math.ceil((new Date(year,11,31)-now)/864e5));
-  const R=18,circ=+(2*Math.PI*R).toFixed(2);
-  const goalOffset=+(circ*(1-goalPct/100)).toFixed(2);
-
-  // Category
-  const catCounts={};
-  monthBooks.forEach(b=>(b.category||[]).forEach(c=>{if(c)catCounts[c]=(catCounts[c]||0)+1;}));
-  const catData=Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const catMax=catData[0]?catData[0][1]:1;
-
-  // Publishers
-  const pubCounts={};
-  monthBooks.forEach(b=>{if(b.publisher)pubCounts[b.publisher]=(pubCounts[b.publisher]||0)+1;});
-  const pubData=Object.entries(pubCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
-
-  // Calendar
-  const daysInMonth=new Date(year,month+1,0).getDate();
-  const firstDay=new Date(year,month,1).getDay();
-  const numRows=Math.ceil((firstDay+daysInMonth)/7);
-  const CELL_H=numRows<=5?48:40; // taller cells for 5-row months
-  const COVER_W=20; // px — 2:3 ratio cover inside cell
-  const COVER_H=Math.round(COVER_W*1.5);
-  const dayMap={};
-  monthBooks.forEach(b=>{
-    const d=parseInt(b.completed.slice(8,10));
-    if(!dayMap[d])dayMap[d]=[];
-    dayMap[d].push(b);
-  });
-  const dayNames=['SUN','MON','TUE','WED','THU','FRI','SAT'];
-  let calCells='';
-  for(let i=0;i<firstDay;i++)calCells+=`<div style="height:${CELL_H}px;"></div>`;
-  for(let d=1;d<=daysInMonth;d++){
-    const bks=dayMap[d]||[];
-    const b=bks[0];
-    const hasBook=bks.length>0;
-    calCells+=`<div style="height:${CELL_H}px;position:relative;background:${hasBook?'#f3f1ea':'#ffffff'};border:1px solid rgba(70,80,60,0.1);border-radius:6px;padding:3px;box-sizing:border-box;overflow:hidden;">`
-      +`<div style="font-size:7px;color:${hasBook?'#888':'#aaa89a'};line-height:1;margin-bottom:2px;">${d}</div>`;
-    if(hasBook){
-      if(b&&b.image){
-        calCells+=`<div style="width:${COVER_W}px;height:${COVER_H}px;border-radius:2px;overflow:hidden;flex-shrink:0;">`
-          +`<img src="${imgCache[b.image]||b.image}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.background='#ccc9bc'">`
-          +`</div>`;
-      } else {
-        calCells+=`<div style="width:${COVER_W}px;height:${COVER_H}px;background:#ccc9bc;border-radius:2px;"></div>`;
-      }
-    }
-    calCells+=`</div>`;
-  }
-  const totalCells=firstDay+daysInMonth;
-  const rem=totalCells%7;
-  if(rem!==0)for(let i=0;i<7-rem;i++)calCells+=`<div style="height:${CELL_H}px;"></div>`;
-
-  // Category bars
-  const catBarsHtml=catData.length
-    ?catData.map(([lbl,cnt])=>
-      `<div style="margin-bottom:5px;">`
-      +`<div style="display:flex;justify-content:space-between;font-size:8px;color:#5d6555;margin-bottom:2px;"><span>${lbl}</span><span>${cnt}</span></div>`
-      +`<div style="height:4px;background:#e9e6dc;border-radius:2px;overflow:hidden;">`
-      +`<div style="width:${(cnt/catMax*100).toFixed(0)}%;height:100%;background:${getCatColor(lbl)};border-radius:2px;"></div></div></div>`
-    ).join('')
-    :`<div style="font-size:10px;color:#9aa092;padding:4px 0;">No data</div>`;
-
-  // Publisher badges
-  const pubHtml=pubData.length
-    ?pubData.map(([name,cnt])=>
-      `<span style="display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:12px;background:#f3f1ea;border:1px solid rgba(70,80,60,0.1);font-size:7px;color:#5d6555;margin:2px 2px 0 0;text-align:center;">`
-      +name
-      +`</span>`
-    ).join('')
-    :`<span style="font-size:10px;color:#9aa092;">No data</span>`;
-
-
-  const card=document.createElement('div');
-  card.style.cssText='position:fixed;left:-9999px;top:0;z-index:-1;width:540px;height:675px;overflow:hidden;background:#f5f3ee;box-sizing:border-box;';
-  card.innerHTML=
-    `<div style="width:540px;height:675px;background:#f5f3ee;padding:24px 36px 40px;box-sizing:border-box;font-family:Sarabun,sans-serif;display:flex;flex-direction:column;gap:9px;position:relative;">`
-
-    // Header — no "X Books" line
-    +`<div style="flex-shrink:0;text-align:center;padding-bottom:10px;border-bottom:1px solid rgba(70,80,60,0.1);">`
-    +`<div style="font-size:9px;letter-spacing:0.22em;color:#9aa092;margin-bottom:2px;">READING WRAP-UP</div>`
-    +`<div style="font-family:Fraunces,Georgia,serif;font-size:66px;font-weight:700;color:#5b7a5f;line-height:1;letter-spacing:-1px;">${monthName}</div>`
-    +`<div style="font-size:16px;color:#5d6555;margin-top:3px;letter-spacing:0.08em;">${year}</div>`
-    +`</div>`
-
-    // Calendar (prominent)
-    +`<div style="flex-shrink:0;">`
-    +`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;">`
-    +dayNames.map(d=>`<div style="text-align:center;font-size:7px;color:#9aa092;letter-spacing:0.06em;padding:2px 0;">${d}</div>`).join('')
-    +`</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;">${calCells}</div></div>`
-
-    // Stats row
-    +`<div style="display:grid;grid-template-columns:1fr 1.5fr 1.2fr;gap:8px;flex-shrink:0;">`
-      +`<div style="background:#fff;border:1px solid rgba(70,80,60,0.1);border-radius:10px;padding:9px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;">`
-      +`<div style="font-size:7px;letter-spacing:0.08em;text-transform:uppercase;color:#9aa092;">Reading Goal</div>`
-      +`<div style="position:relative;width:44px;height:44px;flex-shrink:0;">`
-      +`<svg width="44" height="44" viewBox="0 0 48 48" style="display:block;transform:rotate(-90deg)">`
-      +`<circle cx="24" cy="24" r="${R}" fill="transparent" stroke="#e9e6dc" stroke-width="5"/>`
-      +`<circle cx="24" cy="24" r="${R}" fill="transparent" stroke="#b07a35" stroke-width="5" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${goalOffset}"/>`
-      +`</svg>`
-      +`<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#b07a35;">${goalPct}%</div></div>`
-      +`<div style="font-family:Fraunces,Georgia,serif;font-size:13px;color:#23291f;line-height:1;">${yearDone} / ${readingGoal}</div>`
-      +`<div style="font-size:7px;color:#9aa092;text-align:center;line-height:1.4;">${daysLeft} days left in ${year}</div></div>`
-      +`<div style="background:#fff;border:1px solid rgba(70,80,60,0.1);border-radius:10px;padding:9px;">`
-      +`<div style="font-size:7px;letter-spacing:0.08em;text-transform:uppercase;color:#9aa092;margin-bottom:6px;">By category</div>`
-      +catBarsHtml+`</div>`
-      +`<div style="background:#fff;border:1px solid rgba(70,80,60,0.1);border-radius:10px;padding:9px;">`
-      +`<div style="font-size:7px;letter-spacing:0.08em;text-transform:uppercase;color:#9aa092;margin-bottom:6px;">Publishing</div>`
-      +`<div>${pubHtml}</div></div></div>`
-    // Footer — same style as READING WRAP-UP label, no overflow
-    +`<div style="position:absolute;bottom:18px;left:0;right:0;text-align:center;">`
-    +`<div style="font-size:9px;letter-spacing:0.22em;color:#b0ad9e;">PAWI'S DIARY</div></div>`
-
-    +`</div>`;
-  return card;
-}
-
-
-
-
-
-async function exportSVG(){
-  const btn=document.getElementById('export-svg-btn');
-  if(btn){btn.textContent='⏳ Exporting…';btn.disabled=true;}
+/* ── Export Slide 2 : Books ── */
+async function exportSlide2(){
+  const btn=document.getElementById('export-btn2');
+  if(btn){btn.innerHTML='⏳ Exporting…';btn.disabled=true;}
   try{
-    const now2=new Date();
-    const year2=calViewYear||now2.getFullYear();
-    const month2=calViewMonth!==null?calViewMonth:now2.getMonth();
-    const monthKey2=`${year2}-${String(month2+1).padStart(2,'0')}`;
-    const done2=allBooks.filter(b=>b.status==='Done'&&b.completed);
-    const monthBooks2=done2.filter(b=>b.completed.startsWith(monthKey2));
-    const imgUrls=[...new Set(monthBooks2.map(b=>b.image).filter(Boolean))];
-    const imgCache={};
-    await Promise.all(imgUrls.map(url=>
-      fetch(url).then(r=>r.blob()).then(blob=>new Promise(res=>{
-        const fr=new FileReader();
-        fr.onload=e=>{imgCache[url]=e.target.result;res();};
-        fr.onerror=()=>res();
-        fr.readAsDataURL(blob);
-      })).catch(()=>{})
-    ));
-    const svgStr=buildExportSVG(imgCache);
-    const blob=new Blob([svgStr],{type:'image/svg+xml'});
-    const a=document.createElement('a');
-    a.download=`reading-${year2}-${String(month2+1).padStart(2,'0')}.svg`;
-    a.href=URL.createObjectURL(blob);
-    a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    const E=await _exportSetup();
+    const {surf,surf2,bdr,bdr2,tx,tx2,tx3,brick,
+           monthBooks,mName,mFile,
+           yearDone,goalPct,GR,Gc,Go,catData,catMax,
+           coverImg,lbl,card,sLabel,hero,makeWrap,snap,dl}=E;
+
+    const bookCard3=(b)=>{
+      const cats=(b.category||[]).filter(Boolean);
+      const tags=(b.tags||[]).filter(Boolean);
+      const catPill=cats[0]?`<span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:9px;background:${getCatColor(cats[0])}22;color:${getCatColor(cats[0])};border:1px solid ${getCatColor(cats[0])}55;font-family:'Sarabun',sans-serif;">${escHtml(cats[0])}</span>`:'';
+      const tagPills=tags.slice(0,2).map(t=>{const p=getTagPalette(t);return`<span style="display:inline-block;padding:2px 7px;border-radius:20px;font-size:9px;background:${p.bg};color:${p.text};border:1px solid ${p.border};margin-right:3px;margin-top:3px;font-family:'Sarabun',sans-serif;">${escHtml(t)}</span>`;}).join('');
+      return`<div style="background:${surf};border:1px solid ${bdr2};border-radius:12px;padding:12px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;"><div style="display:flex;justify-content:center;">${coverImg(b,62,93,6)}</div><div>${catPill?`<div style="margin-bottom:5px;">${catPill}</div>`:''}<div style="font-family:'Fraunces',Georgia,serif;font-size:13px;color:${tx};line-height:1.3;margin-bottom:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${escHtml(b.title)}</div><div style="font-size:10px;color:${tx2};font-family:'Sarabun',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml([b.author,b.publisher].filter(Boolean).join(' · '))}</div>${tagPills?`<div style="margin-top:2px;">${tagPills}</div>`:''}</div></div>`;
+    };
+
+    const finishedSection=`<div style="margin-top:30px;">`
+      +(monthBooks.length
+        ? sLabel(`Reading Wrap-up : ${mName} ${calViewYear}`)
+          +`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">${monthBooks.map(b=>bookCard3(b)).join('')}</div>`
+        : sLabel(`Reading Wrap-up : ${mName} ${calViewYear}`)
+          +`<div style="color:${tx3};font-size:12px;padding:8px 0;font-family:'Sarabun',sans-serif;">ไม่มีหนังสือที่อ่านจบในเดือนนี้</div>`)
+      +`</div>`;
+
+    // Stats row: Reading Goal | This Month | By Category
+    const catBars2=catData.length
+      ?catData.map(([name,cnt])=>`<div style="margin-bottom:5px;"><div style="display:flex;justify-content:space-between;font-size:10px;color:${tx2};margin-bottom:2px;font-family:'Sarabun',sans-serif;"><span>${escHtml(name)}</span><span style="color:${tx3};">${cnt}</span></div><div style="height:5px;background:${surf2};border-radius:3px;overflow:hidden;"><div style="width:${(cnt/catMax*100).toFixed(0)}%;height:100%;background:${getCatColor(name)};border-radius:3px;"></div></div></div>`).join('')
+      :`<div style="font-size:10px;color:${tx3};">No data</div>`;
+
+    const daysLeft=Math.max(0,Math.ceil((new Date(calViewYear,11,31)-new Date())/864e5));
+
+    const thisMonthCard=card(
+      lbl('This Month')
+      +`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px 0;">
+         <div style="font-family:'Fraunces',Georgia,serif;font-size:44px;font-weight:700;color:${tx};line-height:1;">${monthBooks.length}</div>
+         <div style="font-size:11px;color:${tx3};font-family:'Sarabun',sans-serif;margin-top:4px;">Books</div>
+       </div>`
+    );
+
+    const goalCard=card(`<div style="display:flex;align-items:center;gap:12px;"><div style="position:relative;width:64px;height:64px;flex-shrink:0;"><svg width="64" height="64" viewBox="0 0 72 72" style="display:block;transform:rotate(-90deg);"><circle cx="36" cy="36" r="${GR}" fill="none" stroke="${surf2}" stroke-width="6"/><circle cx="36" cy="36" r="${GR}" fill="none" stroke="${brick}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${Gc}" stroke-dashoffset="${Go}"/></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:${brick};font-family:'Sarabun',sans-serif;">${goalPct}%</div></div><div>${lbl('Reading Goal '+calViewYear)}<div style="font-family:'Fraunces',Georgia,serif;font-size:20px;color:${tx};line-height:1.1;"><span style="color:${brick};">${yearDone}</span> / ${readingGoal} books</div><div style="font-size:9px;color:${tx3};margin-top:5px;font-family:'Sarabun',sans-serif;">${daysLeft} days left in ${calViewYear}</div></div></div>`);
+
+    const statsRow=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:0;">`
+      +goalCard
+      +thisMonthCard
+      +card(lbl('By Category')+catBars2)
+      +`</div>`;
+
+    const slide2=hero(monthBooks.length,true,false)+statsRow+finishedSection;
+    const c2=await snap(makeWrap(slide2));
+    dl(c2,`wrapup-2-books-${mFile}-${calViewYear}.png`);
+
   }catch(e){
-    alert('SVG Export failed: '+e.message);
+    alert('Export failed: '+e.message);
   }finally{
-    if(btn){btn.innerHTML='<span class="nav-icon">⬡</span> Export SVG (Canva)';btn.disabled=false;}
+    if(btn){btn.innerHTML='<span class="nav-icon">⊟</span> Export Slide 2 — Books';btn.disabled=false;}
   }
-}
-
-function buildExportSVG(imgCache={}){
-  const now=new Date();
-  const year=calViewYear||now.getFullYear();
-  const month=calViewMonth!==null?calViewMonth:now.getMonth();
-  const monthKey=`${year}-${String(month+1).padStart(2,'0')}`;
-  const monthName=new Date(year,month,1).toLocaleDateString('en-GB',{month:'long'}).toUpperCase();
-
-  const done=allBooks.filter(b=>b.status==='Done'&&b.completed);
-  const monthBooks=done.filter(b=>b.completed.startsWith(monthKey));
-
-  // Goal
-  const yearDone=done.filter(b=>b.completed?.startsWith(year.toString())).length;
-  const goalPct=Math.min(100,Math.round(yearDone/readingGoal*100));
-  const daysLeft=Math.max(0,Math.ceil((new Date(year,11,31)-now)/864e5));
-  const R=18,circ=+(2*Math.PI*R).toFixed(2);
-  const goalOffset=+(circ*(1-goalPct/100)).toFixed(2);
-
-  // Category
-  const catCounts={};
-  monthBooks.forEach(b=>(b.category||[]).forEach(c=>{if(c)catCounts[c]=(catCounts[c]||0)+1;}));
-  const catData=Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const catMax=catData[0]?catData[0][1]:1;
-
-  // Publishers
-  const pubCounts={};
-  monthBooks.forEach(b=>{if(b.publisher)pubCounts[b.publisher]=(pubCounts[b.publisher]||0)+1;});
-  const pubData=Object.entries(pubCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
-
-  // Calendar
-  const daysInMonth=new Date(year,month+1,0).getDate();
-  const firstDay=new Date(year,month,1).getDay();
-  const numRows=Math.ceil((firstDay+daysInMonth)/7);
-  const CELL_H=numRows<=5?46:38;
-  const CELL_W=64; // (468-6*3)/7 ≈ 64
-  const CELL_GAP=3;
-  const COVER_W=18,COVER_H=27;
-
-  const dayMap={};
-  monthBooks.forEach(b=>{
-    const d=parseInt(b.completed.slice(8,10));
-    if(!dayMap[d])dayMap[d]=[];
-    dayMap[d].push(b);
-  });
-
-  // Layout
-  const W=540,H=675,LP=36,CX=270,BG='#f5f3ee';
-  const CAL_Y_HDR=140,CAL_Y=148;
-  const calEndY=CAL_Y+numRows*(CELL_H+CELL_GAP)-CELL_GAP;
-  const SY=calEndY+9,SH=150;
-  const C1X=LP,C1W=118,C2X=166,C2W=180,C3X=358,C3W=146;
-
-  let s=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" `
-    +`width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
-
-  // Shared clip path for all book covers (used with transform group)
-  s+=`<defs><clipPath id="bookClip"><rect x="0" y="0" width="${COVER_W}" height="${COVER_H}" rx="2"/></clipPath></defs>`;
-
-  // Background
-  s+=`<rect width="${W}" height="${H}" fill="${BG}"/>`;
-
-  // ── Header ──
-  s+=`<text x="${CX}" y="35" text-anchor="middle" font-family="Sarabun,sans-serif" `
-    +`font-size="9" fill="#9aa092" letter-spacing="2">READING WRAP-UP</text>`;
-  s+=`<text x="${CX}" y="97" text-anchor="middle" font-family="Fraunces,Georgia,serif" `
-    +`font-size="58" font-weight="700" fill="#5b7a5f" letter-spacing="-1">${monthName}</text>`;
-  s+=`<text x="${CX}" y="115" text-anchor="middle" font-family="Sarabun,sans-serif" `
-    +`font-size="13" fill="#5d6555" letter-spacing="1">${year}</text>`;
-  s+=`<line x1="${LP}" y1="126" x2="${W-LP}" y2="126" stroke="#e5e2d9" stroke-width="1"/>`;
-
-  // ── Calendar day names ──
-  const DN=['SUN','MON','TUE','WED','THU','FRI','SAT'];
-  DN.forEach((d,i)=>{
-    const dx=(LP+i*(CELL_W+CELL_GAP)+CELL_W/2).toFixed(1);
-    s+=`<text x="${dx}" y="${CAL_Y_HDR}" text-anchor="middle" font-family="Sarabun,sans-serif" `
-      +`font-size="7" fill="#9aa092" letter-spacing="1">${d}</text>`;
-  });
-
-  // ── Calendar cells ──
-  let ci=firstDay;
-  for(let d=1;d<=daysInMonth;d++,ci++){
-    const col=ci%7;
-    const row=Math.floor(ci/7);
-    const cx_=LP+col*(CELL_W+CELL_GAP);
-    const cy_=CAL_Y+row*(CELL_H+CELL_GAP);
-    const bks=dayMap[d]||[];
-    const hasBook=bks.length>0;
-    const b=bks[0];
-    s+=`<rect x="${cx_}" y="${cy_}" width="${CELL_W}" height="${CELL_H}" rx="5" `
-      +`fill="${hasBook?'#f3f1ea':'#ffffff'}" stroke="#e5e2d9" stroke-width="0.8"/>`;
-    s+=`<text x="${cx_+3}" y="${cy_+9}" font-family="Sarabun,sans-serif" `
-      +`font-size="7" fill="${hasBook?'#888':'#aaa89a'}">${d}</text>`;
-    if(hasBook&&b&&b.image){
-      const src=imgCache[b.image]||b.image;
-      const ix=(cx_+(CELL_W-COVER_W)/2).toFixed(1);
-      const iy=(cy_+CELL_H-COVER_H-2).toFixed(1);
-      s+=`<g transform="translate(${ix},${iy})">`
-        +`<image href="${src}" x="0" y="0" width="${COVER_W}" height="${COVER_H}" `
-        +`preserveAspectRatio="xMidYMid slice" clip-path="url(#bookClip)"/></g>`;
-    }
-  }
-
-  // ── Stats boxes ──
-  [[C1X,C1W],[C2X,C2W],[C3X,C3W]].forEach(([bx,bw])=>{
-    s+=`<rect x="${bx}" y="${SY}" width="${bw}" height="${SH}" rx="8" `
-      +`fill="#ffffff" stroke="#e5e2d9" stroke-width="0.8"/>`;
-  });
-
-  // Box 1: Reading Goal
-  const b1cx=(C1X+C1W/2).toFixed(1);
-  const rcy=SY+55;
-  s+=`<text x="${b1cx}" y="${SY+13}" text-anchor="middle" font-family="Sarabun,sans-serif" `
-    +`font-size="6" fill="#9aa092" letter-spacing="1.5">READING GOAL</text>`;
-  s+=`<circle cx="${b1cx}" cy="${rcy}" r="${R}" fill="none" stroke="#e9e6dc" stroke-width="5" `
-    +`transform="rotate(-90,${b1cx},${rcy})"/>`;
-  s+=`<circle cx="${b1cx}" cy="${rcy}" r="${R}" fill="none" stroke="#b07a35" stroke-width="5" `
-    +`stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${goalOffset}" `
-    +`transform="rotate(-90,${b1cx},${rcy})"/>`;
-  s+=`<text x="${b1cx}" y="${rcy+4}" text-anchor="middle" font-family="Sarabun,sans-serif" `
-    +`font-size="10" font-weight="600" fill="#b07a35">${goalPct}%</text>`;
-  s+=`<text x="${b1cx}" y="${rcy+22}" text-anchor="middle" font-family="Fraunces,Georgia,serif" `
-    +`font-size="12" fill="#23291f">${yearDone} / ${readingGoal}</text>`;
-  s+=`<text x="${b1cx}" y="${rcy+35}" text-anchor="middle" font-family="Sarabun,sans-serif" `
-    +`font-size="6.5" fill="#9aa092">${daysLeft} days left in ${year}</text>`;
-
-  // Box 2: By Category
-  const bax=C2X+8,baw=C2W-16;
-  s+=`<text x="${bax}" y="${SY+13}" font-family="Sarabun,sans-serif" `
-    +`font-size="6" fill="#9aa092" letter-spacing="1.5">BY CATEGORY</text>`;
-  if(catData.length){
-    catData.forEach(([lbl,cnt],i)=>{
-      const ry=SY+22+i*24;
-      const fw=Math.max(2,Math.round(baw*cnt/catMax));
-      const col=getCatColor(lbl);
-      s+=`<text x="${bax}" y="${ry+8}" font-family="Sarabun,sans-serif" font-size="7.5" fill="#5d6555">${lbl}</text>`;
-      s+=`<text x="${C2X+C2W-8}" y="${ry+8}" text-anchor="end" font-family="Sarabun,sans-serif" font-size="7.5" fill="#5d6555">${cnt}</text>`;
-      s+=`<rect x="${bax}" y="${ry+11}" width="${baw}" height="4" rx="2" fill="#e9e6dc"/>`;
-      s+=`<rect x="${bax}" y="${ry+11}" width="${fw}" height="4" rx="2" fill="${col}"/>`;
-    });
-  } else {
-    s+=`<text x="${C2X+C2W/2}" y="${SY+60}" text-anchor="middle" font-family="Sarabun,sans-serif" font-size="9" fill="#9aa092">No data</text>`;
-  }
-
-  // Box 3: Publishing
-  s+=`<text x="${C3X+8}" y="${SY+13}" font-family="Sarabun,sans-serif" `
-    +`font-size="6" fill="#9aa092" letter-spacing="1.5">PUBLISHING</text>`;
-  if(pubData.length){
-    let bx2=C3X+8,by2=SY+20;
-    pubData.forEach(([name])=>{
-      const tw=name.length*5.2+14;
-      if(bx2+tw>C3X+C3W-6&&bx2>C3X+8){bx2=C3X+8;by2+=20;}
-      if(by2+16>SY+SH-6)return;
-      s+=`<rect x="${bx2.toFixed(1)}" y="${by2.toFixed(1)}" width="${tw.toFixed(1)}" height="16" `
-        +`rx="8" fill="#f3f1ea" stroke="#e5e2d9" stroke-width="0.6"/>`;
-      s+=`<text x="${(bx2+tw/2).toFixed(1)}" y="${(by2+11).toFixed(1)}" text-anchor="middle" `
-        +`font-family="Sarabun,sans-serif" font-size="7" fill="#5d6555">${name}</text>`;
-      bx2+=tw+4;
-    });
-  } else {
-    s+=`<text x="${C3X+C3W/2}" y="${SY+60}" text-anchor="middle" font-family="Sarabun,sans-serif" font-size="9" fill="#9aa092">No data</text>`;
-  }
-
-  // ── Footer ──
-  s+=`<text x="${CX}" y="${H-18}" text-anchor="middle" font-family="Sarabun,sans-serif" `
-    +`font-size="9" fill="#b0ad9e" letter-spacing="2">PAWI'S DIARY</text>`;
-
-  s+=`</svg>`;
-  return s;
 }
 
 /* ── Init ── */
