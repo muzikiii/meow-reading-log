@@ -402,11 +402,12 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 @media(max-width:900px){.smart-picks-grid{grid-template-columns:1fr 1fr;}}
 @media(max-width:640px){.smart-picks-grid{grid-template-columns:1fr;}.roulette-card{width:76px;height:108px;}.roulette-card.dim-2{display:none;}}
 /* ── Wrapup month tracking ── */
-.wrapup-tracking-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px;}
+.wrapup-tracking-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:20px;align-items:stretch;}.wrapup-tracking-row .chart-card{height:100%;}
 .wrapup-pub-badges{display:flex;flex-wrap:wrap;gap:8px;}
 .wrapup-pub-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;background:var(--surface2);border:1px solid var(--border2);font-size:12px;color:var(--text2);}
 .wrapup-pub-badge-count{font-size:11px;font-weight:600;color:var(--accent);background:var(--accent2);padding:1px 7px;border-radius:10px;}
-@media(max-width:760px){.wrapup-tracking-row{grid-template-columns:1fr;}}
+@media(max-width:900px){.wrapup-tracking-row{grid-template-columns:1fr 1fr;}}
+@media(max-width:640px){.wrapup-tracking-row{grid-template-columns:1fr;}}
 /* ── Mood Picks ── */
 .mood-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow);}
 .mood-chips-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
@@ -435,6 +436,7 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
       <div class="nav-label">Settings</div>
       <button class="nav-item" onclick="openGoalModal()"><span class="nav-icon">◎</span> Reading Goal <span class="nav-count" id="nav-goal-badge">—</span></button>
       <button class="nav-item" id="export-btn" onclick="exportCard()"><span class="nav-icon">⊡</span> Export Reading Wrapup</button>
+        <button class="nav-item" id="export-svg-btn" onclick="exportSVG()"><span class="nav-icon">⬡</span> Export SVG (Canva)</button>
     </div>
     <div class="sidebar-footer">
       <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn"><span id="theme-icon">☾</span> <span id="theme-label">Dark mode</span></button>
@@ -559,11 +561,6 @@ body{background:var(--bg);color:var(--text);font-family:'Sarabun',sans-serif;fon
 
     <!-- Monthly wrap-up -->
     <div class="view" id="view-wrapup">
-      <div class="page-header">
-        <div class="page-title">Monthly wrap-up</div>
-        <div class="page-sub">สรุปการอ่านในแต่ละเดือน</div>
-      </div>
-      <div class="wrapup-year-bar" id="wrapup-year-filter"></div>
       <div id="wrapup-content"></div>
     </div>
 
@@ -1530,14 +1527,20 @@ function renderWrapup(){
     calViewMonth=curMonth;
   }
 
-  document.getElementById('wrapup-year-filter').innerHTML=years.map(y=>
-    `<button class="filter-chip ${wrapupYear===y?'active':''}" onclick="setWrapupYear('${y}')">${y}</button>`
-  ).join('');
-
   let html='';
 
+  // ── Hero header (export-style) ──
+  const heroKey=`${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}`;
+  const heroBooks=done.filter(b=>b.completed.startsWith(heroKey));
+  const heroMonthName=new Date(calViewYear,calViewMonth,1).toLocaleDateString('en-GB',{month:'long'}).toUpperCase();
+  html+=`<div style="text-align:center;padding:14px 0 10px;margin-bottom:10px;">
+    <div style="font-size:10px;letter-spacing:0.22em;color:var(--text3);margin-bottom:2px;">READING WRAP-UP</div>
+    <div style="font-family:var(--font-display);font-size:68px;font-weight:700;color:var(--accent);line-height:1;letter-spacing:-1px;">${heroMonthName}</div>
+    <div style="font-size:13px;color:var(--text3);margin-top:6px;">${heroBooks.length} Books</div>
+  </div>`;
+
   // ── Calendar grid (navigable) ──
-  html+=renderCalendarGrid(done);
+  html+=renderCalendarGrid(done, years);
 
   // ── Month data ──
   const monthKey=`${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}`;
@@ -1553,11 +1556,11 @@ function renderWrapup(){
   const catBarsHtml=catData.length
     ?catData.map(([label,count])=>`
       <div class="mbar-row" style="cursor:default;">
-        <span class="mbar-label" style="width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(label)}">${escHtml(label)}</span>
+        <span class="mbar-label" style="width:76px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escHtml(label)}">${escHtml(label)}</span>
         <div class="mbar-track">
           <div class="mbar-fill" style="width:${(count/catMax*100).toFixed(1)}%;background:${getCatColor(label)};border-radius:4px;"></div>
         </div>
-        <span class="mbar-count">${count} เล่ม</span>
+        <span class="mbar-count" style="min-width:20px;">${count}</span>
       </div>`).join('')
     :`<div style="color:var(--text3);font-size:12px;padding:4px 0">ไม่มีข้อมูล category</div>`;
 
@@ -1573,7 +1576,31 @@ function renderWrapup(){
       </span>`).join('')
     :`<span style="color:var(--text3);font-size:12px">ไม่มีข้อมูลสำนักพิมพ์</span>`;
 
+  // ── Goal card ──
+  const yearDone=done.filter(b=>b.completed?.startsWith(calViewYear.toString())).length;
+  const goalPct=Math.min(100,Math.round(yearDone/readingGoal*100));
+  const nowG=new Date();
+  const daysLeft=calViewYear===nowG.getFullYear()?Math.max(0,Math.ceil((new Date(calViewYear,11,31)-nowG)/864e5)):0;
+  const GR=28,Gcirc=+(2*Math.PI*GR).toFixed(2);
+  const goalOffset=+(Gcirc*(1-goalPct/100)).toFixed(2);
+  const goalCardHtml=`<div class="chart-card" onclick="openGoalModal()" style="cursor:pointer;display:flex;align-items:center;gap:16px;">
+    <div style="position:relative;width:72px;height:72px;flex-shrink:0;">
+      <svg width="72" height="72" viewBox="0 0 72 72" style="display:block;transform:rotate(-90deg);">
+        <circle cx="36" cy="36" r="${GR}" fill="none" stroke="var(--surface2)" stroke-width="6"/>
+        <circle cx="36" cy="36" r="${GR}" fill="none" stroke="var(--brick)" stroke-width="6"
+          stroke-linecap="round" stroke-dasharray="${Gcirc}" stroke-dashoffset="${goalOffset}"
+          style="transition:stroke-dashoffset 0.6s ease"/>
+      </svg>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--brick);">${goalPct}%</div>
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;white-space:nowrap;">Reading Goal ${calViewYear}</div>
+      <div style="font-family:var(--font-display);font-size:24px;color:var(--text);line-height:1.1;"><span style="color:var(--brick);">${yearDone}</span> / ${readingGoal} books</div>
+    </div>
+  </div>`;
+
   html+=`<div class="wrapup-tracking-row">
+    ${goalCardHtml}
     <div class="chart-card">
       <div class="section-title" style="margin-bottom:12px">By category</div>
       ${catBarsHtml}
@@ -1584,44 +1611,46 @@ function renderWrapup(){
     </div>
   </div>`;
 
-  // ── Book table for the month currently shown in calendar ──
-  let tableRows='';
+  // ── Book cards for the month currently shown in calendar ──
+  let bookCards='';
   if(monthBooks.length){
-    tableRows=monthBooks.map(b=>`
-      <div class="bk-table-row" onclick="openBook('${b.id}')">
-        <div class="bk-table-cover">${coverImgHtml(b,'no-img-bt',10)}</div>
-        <div class="bk-table-main">
-          <div class="bk-table-title">${escHtml(b.title)}</div>
-          <div class="bk-table-pub">${escHtml(b.publisher||'—')}</div>
+    bookCards=monthBooks.map(b=>{
+      const cats=(b.category||[]).filter(Boolean);
+      const tags=(b.tags||[]).filter(Boolean);
+      const coverHtml=b.image
+        ?`<img src="${escHtml(b.image)}" alt="" loading="lazy" onerror="this.style.display='none'">`
+        :escHtml((b.title||'').slice(0,18));
+      const catHtml=cats.length
+        ?cats.map(c=>`<span class="bk-pill bk-pill-cat" style="font-size:10px;">${escHtml(c)}</span>`).join(' ')
+        :'';
+      const tagHtml=tags.length
+        ?tags.map(t=>{const p=getTagPalette(t);return`<span class="smart-pick-tag" style="background:${p.bg};color:${p.text};border-color:${p.border}">${escHtml(t)}</span>`;}).join(' ')
+        :'';
+      return`<div class="smart-pick-card" onclick="openBook('${escHtml(b.id)}')">
+        <div class="smart-pick-cover">${coverHtml}</div>
+        <div class="smart-pick-info">
+          ${catHtml?`<div style="margin-bottom:4px;display:flex;flex-wrap:wrap;gap:3px;">${catHtml}</div>`:''}
+          <div class="smart-pick-title" title="${escHtml(b.title)}">${escHtml(b.title)}</div>
+          <div class="smart-pick-sub">${escHtml([b.author,b.publisher].filter(Boolean).join(' · '))}</div>
+          ${tagHtml?`<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:4px;">${tagHtml}</div>`:''}
         </div>
-        <div class="bk-table-meta">
-          <div class="bk-table-cats">${b.category.map(c=>`<span class="bk-pill bk-pill-cat">${escHtml(c)}</span>`).join('')||'<span class="bk-table-dash">—</span>'}</div>
-          <div class="bk-table-tags">${b.tags.map(t=>`<span class="bk-pill bk-pill-tag">${escHtml(t)}</span>`).join('')||'<span class="bk-table-dash">—</span>'}</div>
-        </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } else {
-    tableRows='<div style="color:var(--text3);font-size:13px;padding:8px 0">ไม่มีหนังสือที่อ่านจบในเดือนนี้</div>';
+    bookCards='<div style="color:var(--text3);font-size:13px;padding:8px 0">ไม่มีหนังสือที่อ่านจบในเดือนนี้</div>';
   }
-  html+=`<div class="chart-card" style="margin-top:20px">
-    <div class="section-title" style="margin-bottom:14px">Reading Wrap-up : ${monthLabel}</div>
-    <div class="bk-table">
-      <div class="bk-table-head">
-        <div></div>
-        <div class="bk-table-main">Book / Publisher</div>
-        <div class="bk-table-meta"><div>Category</div><div>Tag</div></div>
-      </div>
-      ${tableRows}
-    </div>
+  html+=`<div style="margin-top:20px">
+    <div class="section-title" style="margin-bottom:16px">Reading Wrap-up : ${monthLabel}</div>
+    <div class="smart-picks-grid">${bookCards}</div>
   </div>`;
 
   document.getElementById('wrapup-content').innerHTML=html;
 }
 
-function renderCalendarGrid(done){
+function renderCalendarGrid(done, years=[]){
   const y=calViewYear, mi=calViewMonth;
   const key=`${y}-${String(mi+1).padStart(2,'0')}`;
   const books=done.filter(b=>b.completed.startsWith(key));
-  const label=new Date(y,mi,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
   const daysInMonth=new Date(y,mi+1,0).getDate();
   const firstDay=new Date(y,mi,1).getDay();
   const dayMap={};
@@ -1644,10 +1673,13 @@ function renderCalendarGrid(done){
       <div class="cal-books-row">${covers}</div>
     </div>`);
   }
+  const yearChips=years.map(yr=>
+    `<button class="filter-chip ${wrapupYear===yr?'active':''}" onclick="setWrapupYear('${yr}')" style="font-size:12px;padding:3px 12px;">${yr}</button>`
+  ).join('');
   return`<div class="wrapup-month-section">
     <div class="cal-nav">
       <button class="cal-nav-btn" onclick="calPrevMonth()" title="เดือนก่อนหน้า">◀</button>
-      <div class="cal-nav-label">${label} <span class="cal-nav-count">${books.length} เล่ม</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center;">${yearChips}</div>
       <button class="cal-nav-btn" onclick="calNextMonth()" title="เดือนถัดไป">▶</button>
     </div>
     <div class="cal-grid">
@@ -1721,7 +1753,7 @@ function toggleTheme(){
 /* ── Export Card ── */
 async function exportCard(){
   const btn=document.getElementById('export-btn');
-  if(btn){btn.textContent='⏳ Exporting…';btn.disabled=true;}
+  if(btn){btn.textContent='⏳ Capturing…';btn.disabled=true;}
   try{
     if(!window.html2canvas){
       await new Promise((res,rej)=>{
@@ -1730,12 +1762,10 @@ async function exportCard(){
         s.onload=res;s.onerror=rej;document.head.appendChild(s);
       });
     }
-    // Pre-fetch book cover images as base64 to bypass CORS in html2canvas
-    const now2=new Date();
-    const year2=calViewYear||now2.getFullYear();
-    const month2=calViewMonth!==null?calViewMonth:now2.getMonth();
-    const monthKey2=`${year2}-${String(month2+1).padStart(2,'0')}`;
+
+    // Pre-fetch book cover images as base64 to bypass CORS
     const done2=allBooks.filter(b=>b.status==='Done'&&b.completed);
+    const monthKey2=`${calViewYear}-${String(calViewMonth+1).padStart(2,'0')}`;
     const monthBooks2=done2.filter(b=>b.completed.startsWith(monthKey2));
     const imgUrls=[...new Set(monthBooks2.map(b=>b.image).filter(Boolean))];
     const imgCache={};
@@ -1747,19 +1777,80 @@ async function exportCard(){
         fr.readAsDataURL(blob);
       })).catch(()=>{})
     ));
-    const card=buildExportCard(imgCache);
-    document.body.appendChild(card);
-    await new Promise(r=>setTimeout(r,200)); // wait for render
-    const canvas=await html2canvas(card,{
-      scale:2,useCORS:true,allowTaint:false,
-      backgroundColor:'#fbfaf6',width:540,height:675,logging:false
+
+    // Get theme
+    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+    const bgColor=isDark?'#1a201a':'#fbfaf6';
+
+    // Clone wrapup-content into a 1080px off-screen container
+    const src=document.getElementById('wrapup-content');
+    const clone=src.cloneNode(true);
+
+    // Replace image srcs with cached base64
+    clone.querySelectorAll('img').forEach(img=>{
+      const orig=img.getAttribute('src');
+      if(orig&&imgCache[orig])img.src=imgCache[orig];
     });
-    document.body.removeChild(card);
+
+    // Resolve theme colours (fixes CSS-variable rendering in html2canvas)
+    const surfaceColor=isDark?'#222a21':'#ffffff';
+    const borderColor=isDark?'rgba(170,190,160,0.16)':'rgba(70,80,60,0.16)';
+    const textColor=isDark?'#eef2ea':'#23291f';
+    const text2Color=isDark?'#aeb6a6':'#5d6555';
+    const text3Color=isDark?'#7c8576':'#9aa092';
+
+    // Inline chart-card backgrounds so html2canvas renders them correctly
+    clone.querySelectorAll('.chart-card').forEach(el=>{
+      el.style.background=surfaceColor;
+      el.style.border=`1px solid ${borderColor}`;
+      el.style.boxShadow='none';
+    });
+    clone.querySelectorAll('.smart-pick-card').forEach(el=>{
+      el.style.background=surfaceColor;
+      el.style.border=`1px solid ${borderColor}`;
+      el.style.boxShadow='none';
+    });
+
+    // Force grids to 3-col
+    clone.querySelectorAll('.wrapup-tracking-row').forEach(el=>el.style.gridTemplateColumns='1fr 1fr 1fr');
+    clone.querySelectorAll('.smart-picks-grid').forEach(el=>el.style.gridTemplateColumns='repeat(3,1fr)');
+
+    // Footer signature
+    const footer=document.createElement('div');
+    footer.style.cssText=`text-align:center;margin-top:28px;padding-top:0;`;
+    footer.innerHTML=`<span style="font-size:10px;letter-spacing:0.22em;color:${text3Color};font-family:'Sarabun',sans-serif;text-transform:uppercase;">Pawi's Diary</span>`;
+
+    const wrap=document.createElement('div');
+    // 800px wide = smaller calendar cells, tighter layout
+    wrap.style.cssText=`position:fixed;left:-9999px;top:0;z-index:-1;width:800px;padding:48px 56px 52px;box-sizing:border-box;background:${bgColor};color:${textColor};`;
+    if(isDark)wrap.setAttribute('data-theme','dark');
+    wrap.appendChild(clone);
+    wrap.appendChild(footer);
+    document.body.appendChild(wrap);
+
+    await document.fonts.ready;
+    await new Promise(r=>setTimeout(r,300));
+
+    const captured=await html2canvas(wrap,{
+      scale:1.35,useCORS:true,allowTaint:false,
+      backgroundColor:bgColor,logging:false
+    });
+    document.body.removeChild(wrap);
+
+    // Output: 1080px wide (800 * 1.35 ≈ 1080), full natural height
+    const W=captured.width;
+    const H=captured.height;
+    const out=document.createElement('canvas');
+    out.width=W; out.height=H;
+    const ctx=out.getContext('2d');
+    ctx.fillStyle=bgColor;
+    ctx.fillRect(0,0,W,H);
+    ctx.drawImage(captured,0,0);
+
+    const monthName=new Date(calViewYear,calViewMonth,1).toLocaleDateString('en-GB',{month:'long'}).toLowerCase();
     const a=document.createElement('a');
-    const y=calViewYear||new Date().getFullYear();
-    const m=calViewMonth!==null?calViewMonth:new Date().getMonth();
-    a.download=`reading-${y}-${String(m+1).padStart(2,'0')}.png`;
-    a.href=canvas.toDataURL('image/png');
+    a.download=`reading-wrapup-${monthName}-${calViewYear}.png`;
+    a.href=out.toDataURL('image/png');
     a.click();
   }catch(e){
     alert('Export failed: '+e.message);
@@ -1899,6 +1990,210 @@ function buildExportCard(imgCache={}){
 
 
 
+
+
+async function exportSVG(){
+  const btn=document.getElementById('export-svg-btn');
+  if(btn){btn.textContent='⏳ Exporting…';btn.disabled=true;}
+  try{
+    const now2=new Date();
+    const year2=calViewYear||now2.getFullYear();
+    const month2=calViewMonth!==null?calViewMonth:now2.getMonth();
+    const monthKey2=`${year2}-${String(month2+1).padStart(2,'0')}`;
+    const done2=allBooks.filter(b=>b.status==='Done'&&b.completed);
+    const monthBooks2=done2.filter(b=>b.completed.startsWith(monthKey2));
+    const imgUrls=[...new Set(monthBooks2.map(b=>b.image).filter(Boolean))];
+    const imgCache={};
+    await Promise.all(imgUrls.map(url=>
+      fetch(url).then(r=>r.blob()).then(blob=>new Promise(res=>{
+        const fr=new FileReader();
+        fr.onload=e=>{imgCache[url]=e.target.result;res();};
+        fr.onerror=()=>res();
+        fr.readAsDataURL(blob);
+      })).catch(()=>{})
+    ));
+    const svgStr=buildExportSVG(imgCache);
+    const blob=new Blob([svgStr],{type:'image/svg+xml'});
+    const a=document.createElement('a');
+    a.download=`reading-${year2}-${String(month2+1).padStart(2,'0')}.svg`;
+    a.href=URL.createObjectURL(blob);
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  }catch(e){
+    alert('SVG Export failed: '+e.message);
+  }finally{
+    if(btn){btn.innerHTML='<span class="nav-icon">⬡</span> Export SVG (Canva)';btn.disabled=false;}
+  }
+}
+
+function buildExportSVG(imgCache={}){
+  const now=new Date();
+  const year=calViewYear||now.getFullYear();
+  const month=calViewMonth!==null?calViewMonth:now.getMonth();
+  const monthKey=`${year}-${String(month+1).padStart(2,'0')}`;
+  const monthName=new Date(year,month,1).toLocaleDateString('en-GB',{month:'long'}).toUpperCase();
+
+  const done=allBooks.filter(b=>b.status==='Done'&&b.completed);
+  const monthBooks=done.filter(b=>b.completed.startsWith(monthKey));
+
+  // Goal
+  const yearDone=done.filter(b=>b.completed?.startsWith(year.toString())).length;
+  const goalPct=Math.min(100,Math.round(yearDone/readingGoal*100));
+  const daysLeft=Math.max(0,Math.ceil((new Date(year,11,31)-now)/864e5));
+  const R=18,circ=+(2*Math.PI*R).toFixed(2);
+  const goalOffset=+(circ*(1-goalPct/100)).toFixed(2);
+
+  // Category
+  const catCounts={};
+  monthBooks.forEach(b=>(b.category||[]).forEach(c=>{if(c)catCounts[c]=(catCounts[c]||0)+1;}));
+  const catData=Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const catMax=catData[0]?catData[0][1]:1;
+
+  // Publishers
+  const pubCounts={};
+  monthBooks.forEach(b=>{if(b.publisher)pubCounts[b.publisher]=(pubCounts[b.publisher]||0)+1;});
+  const pubData=Object.entries(pubCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  // Calendar
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const firstDay=new Date(year,month,1).getDay();
+  const numRows=Math.ceil((firstDay+daysInMonth)/7);
+  const CELL_H=numRows<=5?46:38;
+  const CELL_W=64; // (468-6*3)/7 ≈ 64
+  const CELL_GAP=3;
+  const COVER_W=18,COVER_H=27;
+
+  const dayMap={};
+  monthBooks.forEach(b=>{
+    const d=parseInt(b.completed.slice(8,10));
+    if(!dayMap[d])dayMap[d]=[];
+    dayMap[d].push(b);
+  });
+
+  // Layout
+  const W=540,H=675,LP=36,CX=270,BG='#f5f3ee';
+  const CAL_Y_HDR=140,CAL_Y=148;
+  const calEndY=CAL_Y+numRows*(CELL_H+CELL_GAP)-CELL_GAP;
+  const SY=calEndY+9,SH=150;
+  const C1X=LP,C1W=118,C2X=166,C2W=180,C3X=358,C3W=146;
+
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" `
+    +`width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+
+  // Shared clip path for all book covers (used with transform group)
+  s+=`<defs><clipPath id="bookClip"><rect x="0" y="0" width="${COVER_W}" height="${COVER_H}" rx="2"/></clipPath></defs>`;
+
+  // Background
+  s+=`<rect width="${W}" height="${H}" fill="${BG}"/>`;
+
+  // ── Header ──
+  s+=`<text x="${CX}" y="35" text-anchor="middle" font-family="Sarabun,sans-serif" `
+    +`font-size="9" fill="#9aa092" letter-spacing="2">READING WRAP-UP</text>`;
+  s+=`<text x="${CX}" y="97" text-anchor="middle" font-family="Fraunces,Georgia,serif" `
+    +`font-size="58" font-weight="700" fill="#5b7a5f" letter-spacing="-1">${monthName}</text>`;
+  s+=`<text x="${CX}" y="115" text-anchor="middle" font-family="Sarabun,sans-serif" `
+    +`font-size="13" fill="#5d6555" letter-spacing="1">${year}</text>`;
+  s+=`<line x1="${LP}" y1="126" x2="${W-LP}" y2="126" stroke="#e5e2d9" stroke-width="1"/>`;
+
+  // ── Calendar day names ──
+  const DN=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  DN.forEach((d,i)=>{
+    const dx=(LP+i*(CELL_W+CELL_GAP)+CELL_W/2).toFixed(1);
+    s+=`<text x="${dx}" y="${CAL_Y_HDR}" text-anchor="middle" font-family="Sarabun,sans-serif" `
+      +`font-size="7" fill="#9aa092" letter-spacing="1">${d}</text>`;
+  });
+
+  // ── Calendar cells ──
+  let ci=firstDay;
+  for(let d=1;d<=daysInMonth;d++,ci++){
+    const col=ci%7;
+    const row=Math.floor(ci/7);
+    const cx_=LP+col*(CELL_W+CELL_GAP);
+    const cy_=CAL_Y+row*(CELL_H+CELL_GAP);
+    const bks=dayMap[d]||[];
+    const hasBook=bks.length>0;
+    const b=bks[0];
+    s+=`<rect x="${cx_}" y="${cy_}" width="${CELL_W}" height="${CELL_H}" rx="5" `
+      +`fill="${hasBook?'#f3f1ea':'#ffffff'}" stroke="#e5e2d9" stroke-width="0.8"/>`;
+    s+=`<text x="${cx_+3}" y="${cy_+9}" font-family="Sarabun,sans-serif" `
+      +`font-size="7" fill="${hasBook?'#888':'#aaa89a'}">${d}</text>`;
+    if(hasBook&&b&&b.image){
+      const src=imgCache[b.image]||b.image;
+      const ix=(cx_+(CELL_W-COVER_W)/2).toFixed(1);
+      const iy=(cy_+CELL_H-COVER_H-2).toFixed(1);
+      s+=`<g transform="translate(${ix},${iy})">`
+        +`<image href="${src}" x="0" y="0" width="${COVER_W}" height="${COVER_H}" `
+        +`preserveAspectRatio="xMidYMid slice" clip-path="url(#bookClip)"/></g>`;
+    }
+  }
+
+  // ── Stats boxes ──
+  [[C1X,C1W],[C2X,C2W],[C3X,C3W]].forEach(([bx,bw])=>{
+    s+=`<rect x="${bx}" y="${SY}" width="${bw}" height="${SH}" rx="8" `
+      +`fill="#ffffff" stroke="#e5e2d9" stroke-width="0.8"/>`;
+  });
+
+  // Box 1: Reading Goal
+  const b1cx=(C1X+C1W/2).toFixed(1);
+  const rcy=SY+55;
+  s+=`<text x="${b1cx}" y="${SY+13}" text-anchor="middle" font-family="Sarabun,sans-serif" `
+    +`font-size="6" fill="#9aa092" letter-spacing="1.5">READING GOAL</text>`;
+  s+=`<circle cx="${b1cx}" cy="${rcy}" r="${R}" fill="none" stroke="#e9e6dc" stroke-width="5" `
+    +`transform="rotate(-90,${b1cx},${rcy})"/>`;
+  s+=`<circle cx="${b1cx}" cy="${rcy}" r="${R}" fill="none" stroke="#b07a35" stroke-width="5" `
+    +`stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${goalOffset}" `
+    +`transform="rotate(-90,${b1cx},${rcy})"/>`;
+  s+=`<text x="${b1cx}" y="${rcy+4}" text-anchor="middle" font-family="Sarabun,sans-serif" `
+    +`font-size="10" font-weight="600" fill="#b07a35">${goalPct}%</text>`;
+  s+=`<text x="${b1cx}" y="${rcy+22}" text-anchor="middle" font-family="Fraunces,Georgia,serif" `
+    +`font-size="12" fill="#23291f">${yearDone} / ${readingGoal}</text>`;
+  s+=`<text x="${b1cx}" y="${rcy+35}" text-anchor="middle" font-family="Sarabun,sans-serif" `
+    +`font-size="6.5" fill="#9aa092">${daysLeft} days left in ${year}</text>`;
+
+  // Box 2: By Category
+  const bax=C2X+8,baw=C2W-16;
+  s+=`<text x="${bax}" y="${SY+13}" font-family="Sarabun,sans-serif" `
+    +`font-size="6" fill="#9aa092" letter-spacing="1.5">BY CATEGORY</text>`;
+  if(catData.length){
+    catData.forEach(([lbl,cnt],i)=>{
+      const ry=SY+22+i*24;
+      const fw=Math.max(2,Math.round(baw*cnt/catMax));
+      const col=getCatColor(lbl);
+      s+=`<text x="${bax}" y="${ry+8}" font-family="Sarabun,sans-serif" font-size="7.5" fill="#5d6555">${lbl}</text>`;
+      s+=`<text x="${C2X+C2W-8}" y="${ry+8}" text-anchor="end" font-family="Sarabun,sans-serif" font-size="7.5" fill="#5d6555">${cnt}</text>`;
+      s+=`<rect x="${bax}" y="${ry+11}" width="${baw}" height="4" rx="2" fill="#e9e6dc"/>`;
+      s+=`<rect x="${bax}" y="${ry+11}" width="${fw}" height="4" rx="2" fill="${col}"/>`;
+    });
+  } else {
+    s+=`<text x="${C2X+C2W/2}" y="${SY+60}" text-anchor="middle" font-family="Sarabun,sans-serif" font-size="9" fill="#9aa092">No data</text>`;
+  }
+
+  // Box 3: Publishing
+  s+=`<text x="${C3X+8}" y="${SY+13}" font-family="Sarabun,sans-serif" `
+    +`font-size="6" fill="#9aa092" letter-spacing="1.5">PUBLISHING</text>`;
+  if(pubData.length){
+    let bx2=C3X+8,by2=SY+20;
+    pubData.forEach(([name])=>{
+      const tw=name.length*5.2+14;
+      if(bx2+tw>C3X+C3W-6&&bx2>C3X+8){bx2=C3X+8;by2+=20;}
+      if(by2+16>SY+SH-6)return;
+      s+=`<rect x="${bx2.toFixed(1)}" y="${by2.toFixed(1)}" width="${tw.toFixed(1)}" height="16" `
+        +`rx="8" fill="#f3f1ea" stroke="#e5e2d9" stroke-width="0.6"/>`;
+      s+=`<text x="${(bx2+tw/2).toFixed(1)}" y="${(by2+11).toFixed(1)}" text-anchor="middle" `
+        +`font-family="Sarabun,sans-serif" font-size="7" fill="#5d6555">${name}</text>`;
+      bx2+=tw+4;
+    });
+  } else {
+    s+=`<text x="${C3X+C3W/2}" y="${SY+60}" text-anchor="middle" font-family="Sarabun,sans-serif" font-size="9" fill="#9aa092">No data</text>`;
+  }
+
+  // ── Footer ──
+  s+=`<text x="${CX}" y="${H-18}" text-anchor="middle" font-family="Sarabun,sans-serif" `
+    +`font-size="9" fill="#b0ad9e" letter-spacing="2">PAWI'S DIARY</text>`;
+
+  s+=`</svg>`;
+  return s;
+}
 
 /* ── Init ── */
 window.addEventListener('DOMContentLoaded',()=>{
