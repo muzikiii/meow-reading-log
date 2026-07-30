@@ -1919,28 +1919,47 @@ async function exportSlide2(){
           +`<div style="color:${tx3};font-size:12px;padding:8px 0;font-family:'Sarabun',sans-serif;">ไม่มีหนังสือที่อ่านจบในเดือนนี้</div>`)
       +`</div>`;
 
-    // Stats row: Reading Goal | This Month | By Category
-    const catBars2=catData.length
-      ?catData.map(([name,cnt])=>`<div style="margin-bottom:5px;"><div style="display:flex;justify-content:space-between;font-size:10px;color:${tx2};margin-bottom:2px;font-family:'Sarabun',sans-serif;"><span>${escHtml(name)}</span><span style="color:${tx3};">${cnt}</span></div><div style="height:5px;background:${surf2};border-radius:3px;overflow:hidden;"><div style="width:${(cnt/catMax*100).toFixed(0)}%;height:100%;background:${getCatColor(name)};border-radius:3px;"></div></div></div>`).join('')
-      :`<div style="font-size:10px;color:${tx3};">No data</div>`;
-
+    // Compact stat bar (single row)
     const daysLeft=Math.max(0,Math.ceil((new Date(calViewYear,11,31)-new Date())/864e5));
+    const GR2=14,Gc2=+(2*Math.PI*GR2).toFixed(2),Go2=+(Gc2*(1-goalPct/100)).toFixed(2);
+    const topCats=catData.slice(0,3).map(([name,cnt])=>
+      `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${getCatColor(name)};flex-shrink:0;"></span>
+        <span style="font-size:10px;color:${tx2};font-family:'Sarabun',sans-serif;">${escHtml(name)}</span>
+        <span style="font-size:10px;color:${tx3};font-family:'Sarabun',sans-serif;">${cnt}</span>
+      </span>`).join('');
 
-    const thisMonthCard=card(
-      lbl('This Month')
-      +`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:6px 0;">
-         <div style="font-family:'Fraunces',Georgia,serif;font-size:44px;font-weight:700;color:${tx};line-height:1;">${monthBooks.length}</div>
-         <div style="font-size:11px;color:${tx3};font-family:'Sarabun',sans-serif;margin-top:4px;">Books</div>
-       </div>`
-    );
-
-    const goalCard=card(`<div style="display:flex;align-items:center;gap:12px;"><div style="position:relative;width:64px;height:64px;flex-shrink:0;"><svg width="64" height="64" viewBox="0 0 72 72" style="display:block;transform:rotate(-90deg);"><circle cx="36" cy="36" r="${GR}" fill="none" stroke="${surf2}" stroke-width="6"/><circle cx="36" cy="36" r="${GR}" fill="none" stroke="${brick}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${Gc}" stroke-dashoffset="${Go}"/></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:${brick};font-family:'Sarabun',sans-serif;">${goalPct}%</div></div><div>${lbl('Reading Goal '+calViewYear)}<div style="font-family:'Fraunces',Georgia,serif;font-size:20px;color:${tx};line-height:1.1;"><span style="color:${brick};">${yearDone}</span> / ${readingGoal} books</div><div style="font-size:9px;color:${tx3};margin-top:5px;font-family:'Sarabun',sans-serif;">${daysLeft} days left in ${calViewYear}</div></div></div>`);
-
-    const statsRow=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:0;">`
-      +goalCard
-      +thisMonthCard
-      +card(lbl('By Category')+catBars2)
-      +`</div>`;
+    const statsRow=`<div style="display:flex;align-items:center;gap:0;background:${surf};border:1px solid ${bdr2};border-radius:12px;padding:12px 18px;margin-bottom:0;">
+      <!-- Goal mini ring -->
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <div style="position:relative;width:36px;height:36px;">
+          <svg width="36" height="36" viewBox="0 0 36 36" style="display:block;transform:rotate(-90deg);">
+            <circle cx="18" cy="18" r="${GR2}" fill="none" stroke="${surf2}" stroke-width="4"/>
+            <circle cx="18" cy="18" r="${GR2}" fill="none" stroke="${brick}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${Gc2}" stroke-dashoffset="${Go2}"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:${brick};font-family:'Sarabun',sans-serif;">${goalPct}%</div>
+        </div>
+        <div>
+          <div style="font-size:9px;color:${tx3};letter-spacing:0.08em;text-transform:uppercase;font-family:'Sarabun',sans-serif;">Reading Goal</div>
+          <div style="font-size:13px;font-family:'Fraunces',Georgia,serif;color:${tx};"><span style="color:${brick};">${yearDone}</span> / ${readingGoal}</div>
+          <div style="font-size:8px;color:${tx3};font-family:'Sarabun',sans-serif;">${daysLeft} days left</div>
+        </div>
+      </div>
+      <!-- Divider -->
+      <div style="width:1px;height:40px;background:${bdr2};margin:0 18px;flex-shrink:0;"></div>
+      <!-- This month -->
+      <div style="flex-shrink:0;text-align:center;">
+        <div style="font-size:9px;color:${tx3};letter-spacing:0.08em;text-transform:uppercase;font-family:'Sarabun',sans-serif;">This Month</div>
+        <div style="font-size:22px;font-family:'Fraunces',Georgia,serif;font-weight:700;color:${tx};line-height:1.1;">${monthBooks.length} <span style="font-size:11px;font-weight:400;color:${tx3};">Books</span></div>
+      </div>
+      <!-- Divider -->
+      <div style="width:1px;height:40px;background:${bdr2};margin:0 18px;flex-shrink:0;"></div>
+      <!-- Categories -->
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:9px;color:${tx3};letter-spacing:0.08em;text-transform:uppercase;font-family:'Sarabun',sans-serif;margin-bottom:5px;">By Category</div>
+        <div style="display:flex;flex-wrap:wrap;">${topCats||`<span style="font-size:10px;color:${tx3};">—</span>`}</div>
+      </div>
+    </div>`;
 
     const slide2=hero(monthBooks.length,true,false)+statsRow+finishedSection;
     const c2=await snap(makeWrap(slide2));
