@@ -1816,8 +1816,8 @@ async function _exportSetup(){
     d.style.cssText=`position:fixed;left:-9999px;top:0;z-index:-1;width:800px;padding:36px 52px 44px;box-sizing:border-box;background:${bg};font-family:'Sarabun',sans-serif;`;
     d.innerHTML=html;return d;
   };
-  // Capture → 1080×1350; footer drawn at fixed bottom via canvas API
-  const snap=async(el)=>{
+  // Capture → 1080×1350; footer optional
+  const snap=async(el,showFooter=true)=>{
     document.body.appendChild(el);
     await document.fonts.ready;
     await new Promise(r=>setTimeout(r,280));
@@ -1828,11 +1828,13 @@ async function _exportSetup(){
     const ctx=out.getContext('2d');
     ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
     ctx.drawImage(raw,0,0);
-    ctx.fillStyle=tx3;
-    ctx.font='11px Sarabun,sans-serif';
-    if('letterSpacing' in ctx)ctx.letterSpacing='3px';
-    ctx.textAlign='center';
-    ctx.fillText("PAWI'S DIARY",W/2,H-36);
+    if(showFooter){
+      ctx.fillStyle=tx3;
+      ctx.font='11px Sarabun,sans-serif';
+      if('letterSpacing' in ctx)ctx.letterSpacing='3px';
+      ctx.textAlign='center';
+      ctx.fillText("PAWI'S DIARY",W/2,H-36);
+    }
     return out;
   };
   const dl=(canvas,name)=>{const a=document.createElement('a');a.download=name;a.href=canvas.toDataURL('image/png');a.click();};
@@ -1850,9 +1852,10 @@ async function exportSlide1(){
   if(btn){btn.innerHTML='⏳ Exporting…';btn.disabled=true;}
   try{
     const E=await _exportSetup();
-    const {bg,surf,surf2,bdr,bdr2,tx,tx2,tx3,
+    const {bg,surf,surf2,bdr,bdr2,tx,tx2,tx3,brick,
            monthBooks,mFile,imgCache,daysInMonth,firstDay,dayMap,
-           coverImg,hero,makeWrap,snap,dl}=E;
+           yearDone,goalPct,GR,Gc,Go,catData,catMax,
+           coverImg,lbl,card,hero,makeWrap,snap,dl}=E;
 
     let calCells='';
     for(let i=0;i<firstDay;i++)calCells+=`<div></div>`;
@@ -1876,11 +1879,34 @@ async function exportSlide1(){
         +`<div style="display:flex;flex-direction:row;gap:14px;">${readingBooks.map(b=>readingCard1(b)).join('')}</div></div>`
       :'';
 
+    // Stat bar for Slide 1
+    const daysLeft1=Math.max(0,Math.ceil((new Date(calViewYear,11,31)-new Date())/864e5));
+    const GR2=14,Gc2=+(2*Math.PI*GR2).toFixed(2),Go2=+(Gc2*(1-goalPct/100)).toFixed(2);
+    const topCats1=catData.slice(0,3).map(([name,cnt])=>
+      `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${getCatColor(name)};flex-shrink:0;"></span><span style="font-size:10px;color:${tx2};font-family:'Sarabun',sans-serif;">${escHtml(name)}</span><span style="font-size:10px;color:${tx3};font-family:'Sarabun',sans-serif;">${cnt}</span></span>`).join('');
+    const statBar1=`<div style="margin-top:24px;display:flex;align-items:center;background:${surf};border:1px solid ${bdr2};border-radius:12px;padding:12px 18px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <div style="position:relative;width:36px;height:36px;">
+          <svg width="36" height="36" viewBox="0 0 36 36" style="display:block;transform:rotate(-90deg);"><circle cx="18" cy="18" r="${GR2}" fill="none" stroke="${surf2}" stroke-width="4"/><circle cx="18" cy="18" r="${GR2}" fill="none" stroke="${brick}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${Gc2}" stroke-dashoffset="${Go2}"/></svg>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:${brick};font-family:'Sarabun',sans-serif;">${goalPct}%</div>
+        </div>
+        <div><div style="font-size:9px;color:${tx3};letter-spacing:0.08em;text-transform:uppercase;font-family:'Sarabun',sans-serif;">Reading Goal</div><div style="font-size:13px;font-family:'Fraunces',Georgia,serif;color:${tx};"><span style="color:${brick};">${yearDone}</span> / ${readingGoal}</div><div style="font-size:8px;color:${tx3};font-family:'Sarabun',sans-serif;">${daysLeft1} days left</div></div>
+      </div>
+      <div style="width:1px;height:40px;background:${bdr2};margin:0 18px;flex-shrink:0;"></div>
+      <div style="flex-shrink:0;text-align:center;">
+        <div style="font-size:9px;color:${tx3};letter-spacing:0.08em;text-transform:uppercase;font-family:'Sarabun',sans-serif;">This Month</div>
+        <div style="font-size:22px;font-family:'Fraunces',Georgia,serif;font-weight:700;color:${tx};line-height:1.1;">${monthBooks.length} <span style="font-size:11px;font-weight:400;color:${tx3};">Books</span></div>
+      </div>
+      <div style="width:1px;height:40px;background:${bdr2};margin:0 18px;flex-shrink:0;"></div>
+      <div style="flex:1;min-width:0;"><div style="font-size:9px;color:${tx3};letter-spacing:0.08em;text-transform:uppercase;font-family:'Sarabun',sans-serif;margin-bottom:5px;">By Category</div><div style="display:flex;flex-wrap:wrap;">${topCats1||`<span style="font-size:10px;color:${tx3};">—</span>`}</div></div>
+    </div>`;
+
     const slide1=
       hero(monthBooks.length, false, false)
       +`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px;">${['SUN','MON','TUE','WED','THU','FRI','SAT'].map(d=>`<div style="text-align:center;font-size:8px;color:${tx3};letter-spacing:0.06em;padding:3px 0;">${d}</div>`).join('')}</div>`
       +`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:18px;">${calCells}</div>`
-      +readingSec1;
+      +readingSec1
+      +statBar1;
 
     const c1=await snap(makeWrap(slide1));
     dl(c1,`wrapup-1-overview-${mFile}-${calViewYear}.png`);
@@ -1898,71 +1924,34 @@ async function exportSlide2(){
   if(btn){btn.innerHTML='⏳ Exporting…';btn.disabled=true;}
   try{
     const E=await _exportSetup();
-    const {surf,surf2,bdr,bdr2,tx,tx2,tx3,brick,
-           monthBooks,mName,mFile,
-           yearDone,goalPct,GR,Gc,Go,catData,catMax,
-           coverImg,lbl,card,sLabel,hero,makeWrap,snap,dl}=E;
+    const {surf,surf2,bdr2,tx,tx2,tx3,
+           monthBooks,mFile,
+           coverImg,hero,makeWrap,snap,dl}=E;
 
+    // Compact card: catPill + author/pub on same row, smaller cover
     const bookCard3=(b)=>{
       const cats=(b.category||[]).filter(Boolean);
       const tags=(b.tags||[]).filter(Boolean);
-      const catPill=cats[0]?`<span style="display:inline-block;padding:2px 8px;border-radius:5px;font-size:9px;background:${getCatColor(cats[0])}22;color:${getCatColor(cats[0])};border:1px solid ${getCatColor(cats[0])}55;font-family:'Sarabun',sans-serif;">${escHtml(cats[0])}</span>`:'';
-      const tagPills=tags.slice(0,2).map(t=>{const p=getTagPalette(t);return`<span style="display:inline-block;padding:2px 7px;border-radius:20px;font-size:9px;background:${p.bg};color:${p.text};border:1px solid ${p.border};margin-right:3px;margin-top:3px;font-family:'Sarabun',sans-serif;">${escHtml(t)}</span>`;}).join('');
-      return`<div style="background:${surf};border:1px solid ${bdr2};border-radius:12px;padding:12px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;"><div style="display:flex;justify-content:center;">${coverImg(b,62,93,6)}</div><div>${catPill?`<div style="margin-bottom:5px;">${catPill}</div>`:''}<div style="font-family:'Fraunces',Georgia,serif;font-size:13px;color:${tx};line-height:1.3;margin-bottom:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${escHtml(b.title)}</div><div style="font-size:10px;color:${tx2};font-family:'Sarabun',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml([b.author,b.publisher].filter(Boolean).join(' · '))}</div>${tagPills?`<div style="margin-top:2px;">${tagPills}</div>`:''}</div></div>`;
+      const catColor=cats[0]?getCatColor(cats[0]):'';
+      const catPill=cats[0]?`<span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:8px;background:${catColor}22;color:${catColor};border:1px solid ${catColor}44;font-family:'Sarabun',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70px;">${escHtml(cats[0])}</span>`:'';
+      const pubAuthor=escHtml([b.author,b.publisher].filter(Boolean).join(' · '));
+      const tagPills=tags.slice(0,1).map(t=>{const p=getTagPalette(t);return`<span style="display:inline-block;padding:1px 6px;border-radius:20px;font-size:8px;background:${p.bg};color:${p.text};border:1px solid ${p.border};font-family:'Sarabun',sans-serif;">${escHtml(t)}</span>`;}).join('');
+      return`<div style="background:${surf};border:1px solid ${bdr2};border-radius:10px;padding:10px;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;justify-content:center;">${coverImg(b,58,82,5)}</div>
+        <div>
+          <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;overflow:hidden;">${catPill}<span style="font-size:8px;color:${tx3};font-family:'Sarabun',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">${pubAuthor}</span></div>
+          <div style="font-family:'Fraunces',Georgia,serif;font-size:12px;color:${tx};line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${escHtml(b.title)}</div>
+          ${tagPills?`<div style="margin-top:3px;">${tagPills}</div>`:''}
+        </div>
+      </div>`;
     };
 
-    const finishedSection=`<div style="margin-top:30px;">`
-      +(monthBooks.length
-        ? sLabel(`Reading Wrap-up : ${mName} ${calViewYear}`)
-          +`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">${monthBooks.map(b=>bookCard3(b)).join('')}</div>`
-        : sLabel(`Reading Wrap-up : ${mName} ${calViewYear}`)
-          +`<div style="color:${tx3};font-size:12px;padding:8px 0;font-family:'Sarabun',sans-serif;">ไม่มีหนังสือที่อ่านจบในเดือนนี้</div>`)
-      +`</div>`;
+    const bookGrid=monthBooks.length
+      ?`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">${monthBooks.map(b=>bookCard3(b)).join('')}</div>`
+      :`<div style="color:${tx3};font-size:12px;padding:8px 0;font-family:'Sarabun',sans-serif;">ไม่มีหนังสือที่อ่านจบในเดือนนี้</div>`;
 
-    // Compact stat bar (single row)
-    const daysLeft=Math.max(0,Math.ceil((new Date(calViewYear,11,31)-new Date())/864e5));
-    const GR2=14,Gc2=+(2*Math.PI*GR2).toFixed(2),Go2=+(Gc2*(1-goalPct/100)).toFixed(2);
-    const topCats=catData.slice(0,3).map(([name,cnt])=>
-      `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;">
-        <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${getCatColor(name)};flex-shrink:0;"></span>
-        <span style="font-size:10px;color:${tx2};font-family:'Sarabun',sans-serif;">${escHtml(name)}</span>
-        <span style="font-size:10px;color:${tx3};font-family:'Sarabun',sans-serif;">${cnt}</span>
-      </span>`).join('');
-
-    const statsRow=`<div style="display:flex;align-items:center;gap:0;background:${surf};border:1px solid ${bdr2};border-radius:12px;padding:12px 18px;margin-bottom:0;">
-      <!-- Goal mini ring -->
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-        <div style="position:relative;width:36px;height:36px;">
-          <svg width="36" height="36" viewBox="0 0 36 36" style="display:block;transform:rotate(-90deg);">
-            <circle cx="18" cy="18" r="${GR2}" fill="none" stroke="${surf2}" stroke-width="4"/>
-            <circle cx="18" cy="18" r="${GR2}" fill="none" stroke="${brick}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${Gc2}" stroke-dashoffset="${Go2}"/>
-          </svg>
-          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:${brick};font-family:'Sarabun',sans-serif;">${goalPct}%</div>
-        </div>
-        <div>
-          <div style="font-size:9px;color:${tx3};letter-spacing:0.08em;text-transform:uppercase;font-family:'Sarabun',sans-serif;">Reading Goal</div>
-          <div style="font-size:13px;font-family:'Fraunces',Georgia,serif;color:${tx};"><span style="color:${brick};">${yearDone}</span> / ${readingGoal}</div>
-          <div style="font-size:8px;color:${tx3};font-family:'Sarabun',sans-serif;">${daysLeft} days left</div>
-        </div>
-      </div>
-      <!-- Divider -->
-      <div style="width:1px;height:40px;background:${bdr2};margin:0 18px;flex-shrink:0;"></div>
-      <!-- This month -->
-      <div style="flex-shrink:0;text-align:center;">
-        <div style="font-size:9px;color:${tx3};letter-spacing:0.08em;text-transform:uppercase;font-family:'Sarabun',sans-serif;">This Month</div>
-        <div style="font-size:22px;font-family:'Fraunces',Georgia,serif;font-weight:700;color:${tx};line-height:1.1;">${monthBooks.length} <span style="font-size:11px;font-weight:400;color:${tx3};">Books</span></div>
-      </div>
-      <!-- Divider -->
-      <div style="width:1px;height:40px;background:${bdr2};margin:0 18px;flex-shrink:0;"></div>
-      <!-- Categories -->
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:9px;color:${tx3};letter-spacing:0.08em;text-transform:uppercase;font-family:'Sarabun',sans-serif;margin-bottom:5px;">By Category</div>
-        <div style="display:flex;flex-wrap:wrap;">${topCats||`<span style="font-size:10px;color:${tx3};">—</span>`}</div>
-      </div>
-    </div>`;
-
-    const slide2=hero(monthBooks.length,true,false)+finishedSection+`<div style="margin-top:24px;">`+statsRow+`</div>`;
-    const c2=await snap(makeWrap(slide2));
+    const slide2=hero(monthBooks.length,true,false)+bookGrid;
+    const c2=await snap(makeWrap(slide2),false);
     dl(c2,`wrapup-2-books-${mFile}-${calViewYear}.png`);
 
   }catch(e){
