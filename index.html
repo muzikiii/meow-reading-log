@@ -1961,7 +1961,7 @@ async function exportSlide2(){
       </div>
     </div>`;
 
-    const slide2=hero(monthBooks.length,true,false)+statsRow+finishedSection;
+    const slide2=hero(monthBooks.length,true,false)+finishedSection+`<div style="margin-top:24px;">`+statsRow+`</div>`;
     const c2=await snap(makeWrap(slide2));
     dl(c2,`wrapup-2-books-${mFile}-${calViewYear}.png`);
 
